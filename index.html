@@ -307,14 +307,14 @@
         </header>
 
         <div class="layout">
-            <!-- Form side -->
+            <!-- LEFT COLUMN: main setup -->
             <section class="card form-card">
                 <h2>Setup</h2>
                 <div class="form-grid">
                     <div class="form-row">
                         <label for="players">Number of players</label>
                         <input id="players" type="number" min="3" max="8" value="6" />
-                        <span class="helper">Designed for 3–8 players using a 300-chip set.</span>
+                        <span class="helper">Designed for 3–8 players using your chip set.</span>
                     </div>
 
                     <div class="form-row">
@@ -345,7 +345,7 @@
                                         value="1.5" style="width:80px;" />
                                     <span>hours</span>
                                 </div>
-                                <span class="helper">Breaks are placed at the closest level boundary to each
+                                <span class="helper">Breaks are placed at the nearest level boundary to each
                                     interval.</span>
                             </div>
                         </div>
@@ -363,7 +363,8 @@
                                     style="width:70px;" />
                                 <span>hours after start.</span>
                             </div>
-                            <span class="helper">Chip case capacity is not automatically enforced for rebuys.</span>
+                            <span class="helper">Rebuy stack = starting stack. Chip capacity isn’t auto-enforced
+                                yet.</span>
                         </div>
                     </div>
                 </div>
@@ -378,7 +379,8 @@
                 </div>
                 <div id="errorBox" class="error" style="display:none;"></div>
             </section>
-            <!-- New Chip Setup card -->
+
+            <!-- LEFT COLUMN: chip setup (second card) -->
             <section class="card" style="margin-top: 10px;">
                 <h2>Chip Setup</h2>
                 <div class="form-grid">
@@ -400,14 +402,15 @@
                 </div>
 
                 <div id="chipColorsContainer" style="margin-top: 10px;">
-                    <!-- Dynamic rows will be injected here -->
+                    <!-- Dynamic rows will be injected here by JS -->
                 </div>
 
                 <div class="small-note" id="chipSummaryNote" style="margin-top: 6px;">
                     Enter your chip counts above to see totals and recommended chips in play.
                 </div>
             </section>
-            <!-- Preview side -->
+
+            <!-- RIGHT COLUMN: live preview -->
             <section class="card preview-card">
                 <div class="preview-header">
                     <h2>Live Preview</h2>
@@ -421,368 +424,368 @@
                 </div>
             </section>
         </div>
-    </div>
 
-    <script>
-        'use strict';
 
-        // --- Core constants for chips and blinds ---
+        <script>
+            'use strict';
 
-        const STARTING_STACK_VALUE = 8000;
+            // --- Core constants for chips and blinds ---
 
-        const CHIP_INVENTORY_PER_DENOM = {
-            25: 50,
-            100: 50,
-            500: 50,
-            1000: 50
-        };
+            const STARTING_STACK_VALUE = 8000;
 
-        const STARTING_STACK_BREAKDOWN = {
-            25: 4,
-            100: 4,
-            500: 5,
-            1000: 5
-        };
-
-        const BLIND_LEVELS = [
-            { sb: 25, bb: 50 },
-            { sb: 50, bb: 100 },
-            { sb: 75, bb: 150 },
-            { sb: 100, bb: 200 },
-            { sb: 150, bb: 300 },
-            { sb: 200, bb: 400 },
-            { sb: 300, bb: 600 },
-            { sb: 400, bb: 800 },
-            { sb: 600, bb: 1200 },
-            { sb: 800, bb: 1600 },
-            { sb: 1200, bb: 2400 },
-            { sb: 1500, bb: 3000 },
-            { sb: 2000, bb: 4000 },
-            { sb: 3000, bb: 6000 },
-            { sb: 4000, bb: 8000 },
-            { sb: 6000, bb: 12000 }
-        ];
-
-        // --- Utility functions ---
-        function isIOS() {
-            return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        }
-        function clamp(val, min, max) {
-            return Math.min(Math.max(val, min), max);
-        }
-
-        function formatMinutesToClock(totalMinutes) {
-            const rounded = Math.round(totalMinutes);
-            const hours = Math.floor(rounded / 60);
-            const minutes = rounded % 60;
-            return `${hours}:${minutes.toString().padStart(2, '0')}`;
-        }
-
-        function endLevelForPlayers(players) {
-            const totalChips = players * STARTING_STACK_VALUE;
-            const targetBB = totalChips / 20; // rough: heads-up stacks about 10 BB each
-
-            for (let i = 0; i < BLIND_LEVELS.length; i++) {
-                if (BLIND_LEVELS[i].bb >= targetBB) {
-                    return i + 1; // levels are 1-based
-                }
-            }
-            return BLIND_LEVELS.length;
-        }
-
-        // --- Chip config state ---
-        let chipColorRows = []; // will hold {nameInput, countInput}
-
-        const STARTING_STACK_CHIPS_PER_PLAYER = 18; // 4+4+5+5 from your current structure
-
-        function initChipColorsUI() {
-            const chipColorsCountInput = document.getElementById('chipColorsCount');
-            const container = document.getElementById('chipColorsContainer');
-
-            function rebuildRows() {
-                const count = clamp(parseInt(chipColorsCountInput.value || '0', 10), 1, 8);
-                chipColorsCountInput.value = count;
-
-                container.innerHTML = '';
-                chipColorRows = [];
-
-                for (let i = 0; i < count; i++) {
-                    const row = document.createElement('div');
-                    row.className = 'inline-row';
-                    row.style.marginTop = '4px';
-
-                    const labelSpan = document.createElement('span');
-                    labelSpan.textContent = `Color ${i + 1}:`;
-
-                    const nameInput = document.createElement('input');
-                    nameInput.type = 'text';
-                    nameInput.placeholder = `e.g. T${i === 0 ? 25 : i === 1 ? 100 : i === 2 ? 500 : 1000}`;
-                    nameInput.style.width = '120px';
-                    nameInput.style.borderRadius = '9px';
-                    nameInput.style.border = '1px solid #4b5563';
-                    nameInput.style.background = '#020617';
-                    nameInput.style.color = '#e5e7eb';
-                    nameInput.style.padding = '6px 8px';
-                    nameInput.style.fontSize = '0.85rem';
-
-                    const countLabel = document.createElement('span');
-                    countLabel.textContent = 'Available:';
-
-                    const countInput = document.createElement('input');
-                    countInput.type = 'number';
-                    countInput.min = '0';
-                    countInput.value = '50';
-                    countInput.style.width = '80px';
-
-                    row.appendChild(labelSpan);
-                    row.appendChild(nameInput);
-                    row.appendChild(countLabel);
-                    row.appendChild(countInput);
-                    container.appendChild(row);
-
-                    chipColorRows.push({ nameInput, countInput });
-
-                    nameInput.addEventListener('input', recalcChipUsage);
-                    countInput.addEventListener('input', recalcChipUsage);
-                }
-
-                recalcChipUsage();
-            }
-
-            chipColorsCountInput.addEventListener('input', rebuildRows);
-            rebuildRows();
-        }
-
-        // Recompute totals + recommended chipsInPlay
-        function recalcChipUsage() {
-            const playersInput = document.getElementById('players');
-            const chipsInPlayInput = document.getElementById('chipsInPlay');
-            const helper = document.getElementById('chipsInPlayHelper');
-            const summaryNote = document.getElementById('chipSummaryNote');
-
-            const players = clamp(parseInt(playersInput.value || '0', 10), 1, 50);
-
-            // Sum all available chips
-            let totalAvailable = 0;
-            chipColorRows.forEach(row => {
-                const count = parseInt(row.countInput.value || '0', 10);
-                if (!isNaN(count) && count > 0) {
-                    totalAvailable += count;
-                }
-            });
-
-            if (totalAvailable === 0 || players === 0) {
-                helper.textContent = 'Enter your chip counts and number of players to see recommended usage.';
-                summaryNote.textContent = 'No chip counts or players yet. Using default 300 chips for now.';
-                return;
-            }
-
-            // Minimum chips: enough to deal starting stacks
-            const minNeeded = players * STARTING_STACK_CHIPS_PER_PLAYER;
-
-            // Recommended max: enough for everyone to rebuy once
-            const recommendedMax = Math.min(
-                totalAvailable,
-                minNeeded + players * STARTING_STACK_CHIPS_PER_PLAYER
-            );
-
-            // If the user hasn't touched chipsInPlay yet or it's 0, suggest something
-            let current = parseInt(chipsInPlayInput.value || '0', 10);
-            if (!current || current < minNeeded || current > totalAvailable) {
-                current = Math.min(recommendedMax, totalAvailable);
-                chipsInPlayInput.value = current;
-            }
-
-            // Adjust min/max attributes for future edits
-            chipsInPlayInput.min = String(minNeeded);
-            chipsInPlayInput.max = String(totalAvailable);
-
-            helper.textContent =
-                `You have ${totalAvailable} chips total. ` +
-                `Minimum needed for ${players} players is ${minNeeded}. ` +
-                `Recommended: between ${minNeeded} and ${recommendedMax} chips in play.`;
-
-            summaryNote.textContent =
-                `Total available chips: ${totalAvailable}. ` +
-                `Currently planning to use ${current} in the tournament.`;
-        }
-
-        // --- Core calculation for one configuration ---
-
-        function calculateStructure() {
-            const playersInput = document.getElementById('players').value;
-            const runtimeInput = document.getElementById('runtimeHours').value;
-            const useBreaks = document.getElementById('useBreaks').checked;
-            const allowRebuys = document.getElementById('allowRebuys').checked;
-
-            let players = parseInt(playersInput, 10);
-            let runtimeHours = parseFloat(runtimeInput);
-
-            const errorBox = document.getElementById('errorBox');
-            errorBox.style.display = 'none';
-            errorBox.textContent = '';
-
-            if (isNaN(players) || players < 3 || players > 8) {
-                errorBox.textContent = 'Please enter a player count between 3 and 8.';
-                errorBox.style.display = 'block';
-                return null;
-            }
-
-            if (isNaN(runtimeHours) || runtimeHours < 1.5 || runtimeHours > 8) {
-                errorBox.textContent = 'Please enter a runtime between 1.5 and 8 hours.';
-                errorBox.style.display = 'block';
-                return null;
-            }
-
-            // Break parameters
-            let breakMinutes = 0;
-            let breakFrequencyHours = 0;
-            let totalBreaks = 0;
-            let totalBreakMinutes = 0;
-
-            if (useBreaks) {
-                breakMinutes = parseFloat(document.getElementById('breakMinutes').value);
-                breakFrequencyHours = parseFloat(document.getElementById('breakFrequencyHours').value);
-
-                if (isNaN(breakMinutes) || breakMinutes <= 0) {
-                    errorBox.textContent = 'Break length must be a positive number of minutes.';
-                    errorBox.style.display = 'block';
-                    return null;
-                }
-                if (isNaN(breakFrequencyHours) || breakFrequencyHours <= 0) {
-                    errorBox.textContent = 'Break frequency must be a positive number of hours.';
-                    errorBox.style.display = 'block';
-                    return null;
-                }
-
-                totalBreaks = Math.floor(runtimeHours / breakFrequencyHours);
-                totalBreakMinutes = totalBreaks * breakMinutes;
-                const totalPlayMinutes = runtimeHours * 60 - totalBreakMinutes;
-                if (totalPlayMinutes <= 0) {
-                    errorBox.textContent = 'Break settings use up the entire runtime. Reduce break length or frequency.';
-                    errorBox.style.display = 'block';
-                    return null;
-                }
-            }
-
-            let rebuyCutoffHours = null;
-            if (allowRebuys) {
-                rebuyCutoffHours = parseFloat(document.getElementById('rebuyCutoffHours').value);
-                if (isNaN(rebuyCutoffHours) || rebuyCutoffHours <= 0) {
-                    errorBox.textContent = 'Rebuy cutoff must be a positive number of hours.';
-                    errorBox.style.display = 'block';
-                    return null;
-                }
-                if (rebuyCutoffHours > runtimeHours) {
-                    rebuyCutoffHours = runtimeHours;
-                }
-            }
-
-            // Determine how many blind levels to prepare
-            const levelsCount = endLevelForPlayers(players);
-
-            const totalPlayMinutes = runtimeHours * 60 - totalBreakMinutes;
-            const levelMinutes = totalPlayMinutes / levelsCount;
-
-            // Build schedule with approximate break placements based on real-time
-            const schedule = [];
-            let clockMinutes = 0;
-            let breaksUsed = 0;
-            let nextBreakAt = useBreaks ? breakFrequencyHours * 60 : Infinity;
-
-            for (let i = 0; i < levelsCount; i++) {
-                const levelNumber = i + 1;
-                const blind = BLIND_LEVELS[i];
-                const levelStart = clockMinutes;
-                const levelEnd = levelStart + levelMinutes;
-
-                let breakAfter = false;
-                let breakLengthForLevel = 0;
-
-                if (useBreaks && breaksUsed < totalBreaks && levelEnd >= nextBreakAt - 0.001) {
-                    // Insert a break after this level
-                    breakAfter = true;
-                    breakLengthForLevel = breakMinutes;
-                    breaksUsed += 1;
-                    nextBreakAt = (breaksUsed + 1) * breakFrequencyHours * 60;
-                    clockMinutes = levelEnd + breakMinutes;
-                } else {
-                    clockMinutes = levelEnd;
-                }
-
-                schedule.push({
-                    level: levelNumber,
-                    sb: blind.sb,
-                    bb: blind.bb,
-                    startMinutes: levelStart,
-                    endMinutes: levelEnd,
-                    breakAfter,
-                    breakLengthForLevel
-                });
-            }
-
-            const totalStackPerPlayer = Object.entries(STARTING_STACK_BREAKDOWN)
-                .reduce((sum, [denom, count]) => sum + parseInt(denom, 10) * count, 0);
-
-            // Sanity check: just informational
-            const chipUsage = {};
-            Object.entries(STARTING_STACK_BREAKDOWN).forEach(([denomStr, perPlayerCount]) => {
-                const denom = parseInt(denomStr, 10);
-                const totalUsed = perPlayerCount * players;
-                const inventory = CHIP_INVENTORY_PER_DENOM[denom];
-                const remaining = inventory - totalUsed;
-                chipUsage[denom] = {
-                    perPlayer: perPlayerCount,
-                    totalUsed,
-                    remaining,
-                    inventory
-                };
-            });
-
-            return {
-                players,
-                runtimeHours,
-                useBreaks,
-                breakMinutes,
-                breakFrequencyHours,
-                totalBreaks,
-                totalBreakMinutes,
-                allowRebuys,
-                rebuyCutoffHours,
-                levelsCount,
-                levelMinutes,
-                schedule,
-                chipUsage,
-                totalStackPerPlayer
+            const CHIP_INVENTORY_PER_DENOM = {
+                25: 50,
+                100: 50,
+                500: 50,
+                1000: 50
             };
-        }
 
-        // --- Preview rendering ---
+            const STARTING_STACK_BREAKDOWN = {
+                25: 4,
+                100: 4,
+                500: 5,
+                1000: 5
+            };
 
-        function renderPreview(structure) {
-            const container = document.getElementById('previewContent');
-            if (!structure) {
-                container.innerHTML = '<p class="small-note muted">Adjust the settings on the left to see the preview.</p>';
-                return;
+            const BLIND_LEVELS = [
+                { sb: 25, bb: 50 },
+                { sb: 50, bb: 100 },
+                { sb: 75, bb: 150 },
+                { sb: 100, bb: 200 },
+                { sb: 150, bb: 300 },
+                { sb: 200, bb: 400 },
+                { sb: 300, bb: 600 },
+                { sb: 400, bb: 800 },
+                { sb: 600, bb: 1200 },
+                { sb: 800, bb: 1600 },
+                { sb: 1200, bb: 2400 },
+                { sb: 1500, bb: 3000 },
+                { sb: 2000, bb: 4000 },
+                { sb: 3000, bb: 6000 },
+                { sb: 4000, bb: 8000 },
+                { sb: 6000, bb: 12000 }
+            ];
+
+            // --- Utility functions ---
+            function isIOS() {
+                return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            }
+            function clamp(val, min, max) {
+                return Math.min(Math.max(val, min), max);
             }
 
-            const {
-                players,
-                runtimeHours,
-                useBreaks,
-                breakMinutes,
-                breakFrequencyHours,
-                totalBreaks,
-                allowRebuys,
-                rebuyCutoffHours,
-                levelsCount,
-                levelMinutes,
-                schedule,
-                chipUsage,
-                totalStackPerPlayer
-            } = structure;
+            function formatMinutesToClock(totalMinutes) {
+                const rounded = Math.round(totalMinutes);
+                const hours = Math.floor(rounded / 60);
+                const minutes = rounded % 60;
+                return `${hours}:${minutes.toString().padStart(2, '0')}`;
+            }
 
-            const chipsSummaryHtml = `
+            function endLevelForPlayers(players) {
+                const totalChips = players * STARTING_STACK_VALUE;
+                const targetBB = totalChips / 20; // rough: heads-up stacks about 10 BB each
+
+                for (let i = 0; i < BLIND_LEVELS.length; i++) {
+                    if (BLIND_LEVELS[i].bb >= targetBB) {
+                        return i + 1; // levels are 1-based
+                    }
+                }
+                return BLIND_LEVELS.length;
+            }
+
+            // --- Chip config state ---
+            let chipColorRows = []; // will hold {nameInput, countInput}
+
+            const STARTING_STACK_CHIPS_PER_PLAYER = 18; // 4+4+5+5 from your current structure
+
+            function initChipColorsUI() {
+                const chipColorsCountInput = document.getElementById('chipColorsCount');
+                const container = document.getElementById('chipColorsContainer');
+
+                function rebuildRows() {
+                    const count = clamp(parseInt(chipColorsCountInput.value || '0', 10), 1, 8);
+                    chipColorsCountInput.value = count;
+
+                    container.innerHTML = '';
+                    chipColorRows = [];
+
+                    for (let i = 0; i < count; i++) {
+                        const row = document.createElement('div');
+                        row.className = 'inline-row';
+                        row.style.marginTop = '4px';
+
+                        const labelSpan = document.createElement('span');
+                        labelSpan.textContent = `Color ${i + 1}:`;
+
+                        const nameInput = document.createElement('input');
+                        nameInput.type = 'text';
+                        nameInput.placeholder = `e.g. T${i === 0 ? 25 : i === 1 ? 100 : i === 2 ? 500 : 1000}`;
+                        nameInput.style.width = '120px';
+                        nameInput.style.borderRadius = '9px';
+                        nameInput.style.border = '1px solid #4b5563';
+                        nameInput.style.background = '#020617';
+                        nameInput.style.color = '#e5e7eb';
+                        nameInput.style.padding = '6px 8px';
+                        nameInput.style.fontSize = '0.85rem';
+
+                        const countLabel = document.createElement('span');
+                        countLabel.textContent = 'Available:';
+
+                        const countInput = document.createElement('input');
+                        countInput.type = 'number';
+                        countInput.min = '0';
+                        countInput.value = '50';
+                        countInput.style.width = '80px';
+
+                        row.appendChild(labelSpan);
+                        row.appendChild(nameInput);
+                        row.appendChild(countLabel);
+                        row.appendChild(countInput);
+                        container.appendChild(row);
+
+                        chipColorRows.push({ nameInput, countInput });
+
+                        nameInput.addEventListener('input', recalcChipUsage);
+                        countInput.addEventListener('input', recalcChipUsage);
+                    }
+
+                    recalcChipUsage();
+                }
+
+                chipColorsCountInput.addEventListener('input', rebuildRows);
+                rebuildRows();
+            }
+
+            // Recompute totals + recommended chipsInPlay
+            function recalcChipUsage() {
+                const playersInput = document.getElementById('players');
+                const chipsInPlayInput = document.getElementById('chipsInPlay');
+                const helper = document.getElementById('chipsInPlayHelper');
+                const summaryNote = document.getElementById('chipSummaryNote');
+
+                const players = clamp(parseInt(playersInput.value || '0', 10), 1, 50);
+
+                // Sum all available chips
+                let totalAvailable = 0;
+                chipColorRows.forEach(row => {
+                    const count = parseInt(row.countInput.value || '0', 10);
+                    if (!isNaN(count) && count > 0) {
+                        totalAvailable += count;
+                    }
+                });
+
+                if (totalAvailable === 0 || players === 0) {
+                    helper.textContent = 'Enter your chip counts and number of players to see recommended usage.';
+                    summaryNote.textContent = 'No chip counts or players yet. Using default 300 chips for now.';
+                    return;
+                }
+
+                // Minimum chips: enough to deal starting stacks
+                const minNeeded = players * STARTING_STACK_CHIPS_PER_PLAYER;
+
+                // Recommended max: enough for everyone to rebuy once
+                const recommendedMax = Math.min(
+                    totalAvailable,
+                    minNeeded + players * STARTING_STACK_CHIPS_PER_PLAYER
+                );
+
+                // If the user hasn't touched chipsInPlay yet or it's 0, suggest something
+                let current = parseInt(chipsInPlayInput.value || '0', 10);
+                if (!current || current < minNeeded || current > totalAvailable) {
+                    current = Math.min(recommendedMax, totalAvailable);
+                    chipsInPlayInput.value = current;
+                }
+
+                // Adjust min/max attributes for future edits
+                chipsInPlayInput.min = String(minNeeded);
+                chipsInPlayInput.max = String(totalAvailable);
+
+                helper.textContent =
+                    `You have ${totalAvailable} chips total. ` +
+                    `Minimum needed for ${players} players is ${minNeeded}. ` +
+                    `Recommended: between ${minNeeded} and ${recommendedMax} chips in play.`;
+
+                summaryNote.textContent =
+                    `Total available chips: ${totalAvailable}. ` +
+                    `Currently planning to use ${current} in the tournament.`;
+            }
+
+            // --- Core calculation for one configuration ---
+
+            function calculateStructure() {
+                const playersInput = document.getElementById('players').value;
+                const runtimeInput = document.getElementById('runtimeHours').value;
+                const useBreaks = document.getElementById('useBreaks').checked;
+                const allowRebuys = document.getElementById('allowRebuys').checked;
+
+                let players = parseInt(playersInput, 10);
+                let runtimeHours = parseFloat(runtimeInput);
+
+                const errorBox = document.getElementById('errorBox');
+                errorBox.style.display = 'none';
+                errorBox.textContent = '';
+
+                if (isNaN(players) || players < 3 || players > 8) {
+                    errorBox.textContent = 'Please enter a player count between 3 and 8.';
+                    errorBox.style.display = 'block';
+                    return null;
+                }
+
+                if (isNaN(runtimeHours) || runtimeHours < 1.5 || runtimeHours > 8) {
+                    errorBox.textContent = 'Please enter a runtime between 1.5 and 8 hours.';
+                    errorBox.style.display = 'block';
+                    return null;
+                }
+
+                // Break parameters
+                let breakMinutes = 0;
+                let breakFrequencyHours = 0;
+                let totalBreaks = 0;
+                let totalBreakMinutes = 0;
+
+                if (useBreaks) {
+                    breakMinutes = parseFloat(document.getElementById('breakMinutes').value);
+                    breakFrequencyHours = parseFloat(document.getElementById('breakFrequencyHours').value);
+
+                    if (isNaN(breakMinutes) || breakMinutes <= 0) {
+                        errorBox.textContent = 'Break length must be a positive number of minutes.';
+                        errorBox.style.display = 'block';
+                        return null;
+                    }
+                    if (isNaN(breakFrequencyHours) || breakFrequencyHours <= 0) {
+                        errorBox.textContent = 'Break frequency must be a positive number of hours.';
+                        errorBox.style.display = 'block';
+                        return null;
+                    }
+
+                    totalBreaks = Math.floor(runtimeHours / breakFrequencyHours);
+                    totalBreakMinutes = totalBreaks * breakMinutes;
+                    const totalPlayMinutes = runtimeHours * 60 - totalBreakMinutes;
+                    if (totalPlayMinutes <= 0) {
+                        errorBox.textContent = 'Break settings use up the entire runtime. Reduce break length or frequency.';
+                        errorBox.style.display = 'block';
+                        return null;
+                    }
+                }
+
+                let rebuyCutoffHours = null;
+                if (allowRebuys) {
+                    rebuyCutoffHours = parseFloat(document.getElementById('rebuyCutoffHours').value);
+                    if (isNaN(rebuyCutoffHours) || rebuyCutoffHours <= 0) {
+                        errorBox.textContent = 'Rebuy cutoff must be a positive number of hours.';
+                        errorBox.style.display = 'block';
+                        return null;
+                    }
+                    if (rebuyCutoffHours > runtimeHours) {
+                        rebuyCutoffHours = runtimeHours;
+                    }
+                }
+
+                // Determine how many blind levels to prepare
+                const levelsCount = endLevelForPlayers(players);
+
+                const totalPlayMinutes = runtimeHours * 60 - totalBreakMinutes;
+                const levelMinutes = totalPlayMinutes / levelsCount;
+
+                // Build schedule with approximate break placements based on real-time
+                const schedule = [];
+                let clockMinutes = 0;
+                let breaksUsed = 0;
+                let nextBreakAt = useBreaks ? breakFrequencyHours * 60 : Infinity;
+
+                for (let i = 0; i < levelsCount; i++) {
+                    const levelNumber = i + 1;
+                    const blind = BLIND_LEVELS[i];
+                    const levelStart = clockMinutes;
+                    const levelEnd = levelStart + levelMinutes;
+
+                    let breakAfter = false;
+                    let breakLengthForLevel = 0;
+
+                    if (useBreaks && breaksUsed < totalBreaks && levelEnd >= nextBreakAt - 0.001) {
+                        // Insert a break after this level
+                        breakAfter = true;
+                        breakLengthForLevel = breakMinutes;
+                        breaksUsed += 1;
+                        nextBreakAt = (breaksUsed + 1) * breakFrequencyHours * 60;
+                        clockMinutes = levelEnd + breakMinutes;
+                    } else {
+                        clockMinutes = levelEnd;
+                    }
+
+                    schedule.push({
+                        level: levelNumber,
+                        sb: blind.sb,
+                        bb: blind.bb,
+                        startMinutes: levelStart,
+                        endMinutes: levelEnd,
+                        breakAfter,
+                        breakLengthForLevel
+                    });
+                }
+
+                const totalStackPerPlayer = Object.entries(STARTING_STACK_BREAKDOWN)
+                    .reduce((sum, [denom, count]) => sum + parseInt(denom, 10) * count, 0);
+
+                // Sanity check: just informational
+                const chipUsage = {};
+                Object.entries(STARTING_STACK_BREAKDOWN).forEach(([denomStr, perPlayerCount]) => {
+                    const denom = parseInt(denomStr, 10);
+                    const totalUsed = perPlayerCount * players;
+                    const inventory = CHIP_INVENTORY_PER_DENOM[denom];
+                    const remaining = inventory - totalUsed;
+                    chipUsage[denom] = {
+                        perPlayer: perPlayerCount,
+                        totalUsed,
+                        remaining,
+                        inventory
+                    };
+                });
+
+                return {
+                    players,
+                    runtimeHours,
+                    useBreaks,
+                    breakMinutes,
+                    breakFrequencyHours,
+                    totalBreaks,
+                    totalBreakMinutes,
+                    allowRebuys,
+                    rebuyCutoffHours,
+                    levelsCount,
+                    levelMinutes,
+                    schedule,
+                    chipUsage,
+                    totalStackPerPlayer
+                };
+            }
+
+            // --- Preview rendering ---
+
+            function renderPreview(structure) {
+                const container = document.getElementById('previewContent');
+                if (!structure) {
+                    container.innerHTML = '<p class="small-note muted">Adjust the settings on the left to see the preview.</p>';
+                    return;
+                }
+
+                const {
+                    players,
+                    runtimeHours,
+                    useBreaks,
+                    breakMinutes,
+                    breakFrequencyHours,
+                    totalBreaks,
+                    allowRebuys,
+                    rebuyCutoffHours,
+                    levelsCount,
+                    levelMinutes,
+                    schedule,
+                    chipUsage,
+                    totalStackPerPlayer
+                } = structure;
+
+                const chipsSummaryHtml = `
       <div class="preview-section-title">Chip Breakdown &amp; Summary</div>
       <div class="chips-summary">
         Starting stack per player: <strong>${totalStackPerPlayer.toLocaleString()}</strong> (value).
@@ -800,8 +803,8 @@
         </thead>
         <tbody>
           ${Object.keys(chipUsage).sort((a, b) => parseInt(a) - parseInt(b)).map(denom => {
-                const u = chipUsage[denom];
-                return `
+                    const u = chipUsage[denom];
+                    return `
               <tr>
                 <td>T${denom}</td>
                 <td>${u.perPlayer}</td>
@@ -809,12 +812,12 @@
                 <td>${u.inventory}</td>
                 <td>${u.remaining}</td>
               </tr>`;
-            }).join('')}
+                }).join('')}
         </tbody>
       </table>
     `;
 
-            const metaHtml = `
+                const metaHtml = `
       <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:4px;margin-bottom:6px;">
         <div class="tag">
           <span class="tag-dot"></span>
@@ -835,20 +838,20 @@
       </div>
     `;
 
-            const breaksLine = useBreaks
-                ? `<span class="small-note">Break plan: one <strong>${breakMinutes}-minute</strong> break every <strong>${breakFrequencyHours}</strong> hours (≈ ${totalBreaks} breaks).</span>`
-                : `<span class="small-note">Break plan: <strong>none</strong> (you can always call an ad hoc break at the table).</span>`;
+                const breaksLine = useBreaks
+                    ? `<span class="small-note">Break plan: one <strong>${breakMinutes}-minute</strong> break every <strong>${breakFrequencyHours}</strong> hours (≈ ${totalBreaks} breaks).</span>`
+                    : `<span class="small-note">Break plan: <strong>none</strong> (you can always call an ad hoc break at the table).</span>`;
 
-            const rebuyLine = allowRebuys
-                ? `<span class="small-note">Rebuys: allowed until <strong>${rebuyCutoffHours}</strong> hours after start (same stack as starting stack).</span>`
-                : `<span class="small-note">Rebuys: <strong>not allowed</strong>.</span>`;
+                const rebuyLine = allowRebuys
+                    ? `<span class="small-note">Rebuys: allowed until <strong>${rebuyCutoffHours}</strong> hours after start (same stack as starting stack).</span>`
+                    : `<span class="small-note">Rebuys: <strong>not allowed</strong>.</span>`;
 
-            const scheduleRowsHtml = schedule.map(level => {
-                const start = formatMinutesToClock(level.startMinutes);
-                const end = formatMinutesToClock(level.endMinutes);
-                const length = `${Math.round(levelMinutes)} min`;
-                const breakText = level.breakAfter ? `${level.breakLengthForLevel} min` : '';
-                return `
+                const scheduleRowsHtml = schedule.map(level => {
+                    const start = formatMinutesToClock(level.startMinutes);
+                    const end = formatMinutesToClock(level.endMinutes);
+                    const length = `${Math.round(levelMinutes)} min`;
+                    const breakText = level.breakAfter ? `${level.breakLengthForLevel} min` : '';
+                    return `
         <tr>
           <td>${level.level}</td>
           <td>${level.sb}/${level.bb}</td>
@@ -857,9 +860,9 @@
           <td>${length}</td>
           <td>${breakText}</td>
         </tr>`;
-            }).join('');
+                }).join('');
 
-            const scheduleHtml = `
+                const scheduleHtml = `
       <div class="preview-section-title" style="margin-top:10px;">Blind Schedule (Preview)</div>
       <span class="small-note">
         ${levelsCount} levels of approximately ${Math.round(levelMinutes)} minutes each.
@@ -883,283 +886,283 @@
       </div>
     `;
 
-            container.innerHTML = `
+                container.innerHTML = `
       ${metaHtml}
       ${chipsSummaryHtml}
       ${breaksLine}<br/>
       ${rebuyLine}
       ${scheduleHtml}
     `;
-        }
-
-        // --- PDF generation ---
-
-        function generatePdf(structure) {
-            if (!window.jspdf || !window.jspdf.jsPDF) {
-                alert('jsPDF failed to load. Check your internet connection and reload the page.');
-                return;
             }
 
-            const {
-                players,
-                runtimeHours,
-                useBreaks,
-                breakMinutes,
-                breakFrequencyHours,
-                totalBreaks,
-                allowRebuys,
-                rebuyCutoffHours,
-                levelsCount,
-                levelMinutes,
-                schedule,
-                chipUsage,
-                totalStackPerPlayer
-            } = structure;
+            // --- PDF generation ---
 
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+            function generatePdf(structure) {
+                if (!window.jspdf || !window.jspdf.jsPDF) {
+                    alert('jsPDF failed to load. Check your internet connection and reload the page.');
+                    return;
+                }
 
-            let cursorY = 12;
+                const {
+                    players,
+                    runtimeHours,
+                    useBreaks,
+                    breakMinutes,
+                    breakFrequencyHours,
+                    totalBreaks,
+                    allowRebuys,
+                    rebuyCutoffHours,
+                    levelsCount,
+                    levelMinutes,
+                    schedule,
+                    chipUsage,
+                    totalStackPerPlayer
+                } = structure;
 
-            // Title
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(18);
-            doc.text('Home Poker Tournament Guide', 105, cursorY, { align: 'center' });
-            cursorY += 8;
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
-            doc.setFontSize(11);
-            doc.setFont('helvetica', 'normal');
-            doc.text(
-                `Players: ${players}   •   Runtime: ${runtimeHours} hours   •   Starting stack: ${totalStackPerPlayer.toLocaleString()}`,
-                105,
-                cursorY,
-                { align: 'center' }
-            );
-            cursorY += 8;
+                let cursorY = 12;
 
-            // Section 1: Hand strength cheat sheet
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(13);
-            doc.text('Quick Hand Strength Guide (Best to Worst)', 14, cursorY);
-            cursorY += 4;
+                // Title
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(18);
+                doc.text('Home Poker Tournament Guide', 105, cursorY, { align: 'center' });
+                cursorY += 8;
 
-            const handRows = [
-                ['1', 'Royal Flush', 'A-K-Q-J-10 of the same suit.'],
-                ['2', 'Straight Flush', 'Five cards in sequence, same suit.'],
-                ['3', 'Four of a Kind', 'Four cards of the same rank.'],
-                ['4', 'Full House', 'Three of a kind + a pair.'],
-                ['5', 'Flush', 'Five cards of the same suit.'],
-                ['6', 'Straight', 'Five cards in sequence, mixed suits.'],
-                ['7', 'Three of a Kind', 'Three cards of the same rank.'],
-                ['8', 'Two Pair', 'Two different pairs.'],
-                ['9', 'One Pair', 'Two cards of the same rank.'],
-                ['10', 'High Card', 'No one makes a hand; highest card wins.']
-            ];
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'normal');
+                doc.text(
+                    `Players: ${players}   •   Runtime: ${runtimeHours} hours   •   Starting stack: ${totalStackPerPlayer.toLocaleString()}`,
+                    105,
+                    cursorY,
+                    { align: 'center' }
+                );
+                cursorY += 8;
 
-            doc.autoTable({
-                startY: cursorY,
-                head: [['Rank', 'Hand', 'Description']],
-                body: handRows,
-                styles: { fontSize: 9, cellPadding: 1.5 },
-                headStyles: { fillColor: [15, 23, 42], textColor: 255 }
-            });
+                // Section 1: Hand strength cheat sheet
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(13);
+                doc.text('Quick Hand Strength Guide (Best to Worst)', 14, cursorY);
+                cursorY += 4;
 
-            cursorY = doc.lastAutoTable.finalY + 6;
+                const handRows = [
+                    ['1', 'Royal Flush', 'A-K-Q-J-10 of the same suit.'],
+                    ['2', 'Straight Flush', 'Five cards in sequence, same suit.'],
+                    ['3', 'Four of a Kind', 'Four cards of the same rank.'],
+                    ['4', 'Full House', 'Three of a kind + a pair.'],
+                    ['5', 'Flush', 'Five cards of the same suit.'],
+                    ['6', 'Straight', 'Five cards in sequence, mixed suits.'],
+                    ['7', 'Three of a Kind', 'Three cards of the same rank.'],
+                    ['8', 'Two Pair', 'Two different pairs.'],
+                    ['9', 'One Pair', 'Two cards of the same rank.'],
+                    ['10', 'High Card', 'No one makes a hand; highest card wins.']
+                ];
 
-            // Section 2: Basic table info – breaks and rebuys
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(13);
-            doc.text('Table Settings & Rules', 14, cursorY);
-            cursorY += 5;
+                doc.autoTable({
+                    startY: cursorY,
+                    head: [['Rank', 'Hand', 'Description']],
+                    body: handRows,
+                    styles: { fontSize: 9, cellPadding: 1.5 },
+                    headStyles: { fillColor: [15, 23, 42], textColor: 255 }
+                });
 
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10);
+                cursorY = doc.lastAutoTable.finalY + 6;
 
-            const breaksLine = useBreaks
-                ? `Breaks: One ${breakMinutes}-minute break every ${breakFrequencyHours} hours (planned ≈ ${totalBreaks} breaks).`
-                : 'Breaks: No scheduled breaks (host may call breaks as needed).';
+                // Section 2: Basic table info – breaks and rebuys
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(13);
+                doc.text('Table Settings & Rules', 14, cursorY);
+                cursorY += 5;
 
-            const rebuysLine = allowRebuys
-                ? `Rebuys: Allowed until ${rebuyCutoffHours} hours after start. Rebuy stack = starting stack.`
-                : 'Rebuys: Not allowed. Once you lose your stack you are out of the tournament.';
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
 
-            doc.text(`Players: ${players}`, 14, cursorY);
-            cursorY += 4;
-            doc.text(`Total runtime (including breaks): ${runtimeHours} hours`, 14, cursorY);
-            cursorY += 4;
-            doc.text(breaksLine, 14, cursorY);
-            cursorY += 4;
-            doc.text(rebuysLine, 14, cursorY);
-            cursorY += 6;
+                const breaksLine = useBreaks
+                    ? `Breaks: One ${breakMinutes}-minute break every ${breakFrequencyHours} hours (planned ≈ ${totalBreaks} breaks).`
+                    : 'Breaks: No scheduled breaks (host may call breaks as needed).';
 
-            // Section 3: Chip breakdown
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(13);
-            doc.text('Chip Breakdown (Standard 300-Chip Set)', 14, cursorY);
-            cursorY += 4;
+                const rebuysLine = allowRebuys
+                    ? `Rebuys: Allowed until ${rebuyCutoffHours} hours after start. Rebuy stack = starting stack.`
+                    : 'Rebuys: Not allowed. Once you lose your stack you are out of the tournament.';
 
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10);
-            doc.text(
-                `Each player starts with ${totalStackPerPlayer.toLocaleString()} in chips using these denominations:`,
-                14,
-                cursorY
-            );
-            cursorY += 4;
+                doc.text(`Players: ${players}`, 14, cursorY);
+                cursorY += 4;
+                doc.text(`Total runtime (including breaks): ${runtimeHours} hours`, 14, cursorY);
+                cursorY += 4;
+                doc.text(breaksLine, 14, cursorY);
+                cursorY += 4;
+                doc.text(rebuysLine, 14, cursorY);
+                cursorY += 6;
 
-            const chipBody = Object.keys(chipUsage)
-                .sort((a, b) => parseInt(a) - parseInt(b))
-                .map(denom => {
-                    const u = chipUsage[denom];
+                // Section 3: Chip breakdown
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(13);
+                doc.text('Chip Breakdown (Standard 300-Chip Set)', 14, cursorY);
+                cursorY += 4;
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.text(
+                    `Each player starts with ${totalStackPerPlayer.toLocaleString()} in chips using these denominations:`,
+                    14,
+                    cursorY
+                );
+                cursorY += 4;
+
+                const chipBody = Object.keys(chipUsage)
+                    .sort((a, b) => parseInt(a) - parseInt(b))
+                    .map(denom => {
+                        const u = chipUsage[denom];
+                        return [
+                            `T${denom}`,
+                            String(u.perPlayer),
+                            String(u.totalUsed),
+                            String(u.inventory),
+                            String(u.remaining)
+                        ];
+                    });
+
+                doc.autoTable({
+                    startY: cursorY,
+                    head: [['Denomination', 'Chips / Player', 'Total Used', 'Inventory', 'Remaining']],
+                    body: chipBody,
+                    styles: { fontSize: 9, cellPadding: 1.5 },
+                    headStyles: { fillColor: [15, 23, 42], textColor: 255 }
+                });
+
+                cursorY = doc.lastAutoTable.finalY + 6;
+
+                doc.setFontSize(9);
+                doc.text(
+                    'Note: This uses only part of a 300-chip set, leaving plenty of chips for rebuys or color-ups.',
+                    14,
+                    cursorY
+                );
+                cursorY += 6;
+
+                // New page if needed
+                if (cursorY > 220) {
+                    doc.addPage();
+                    cursorY = 14;
+                }
+
+                // Section 4: Blind schedule
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(13);
+                doc.text('Blind Level Schedule', 14, cursorY);
+                cursorY += 4;
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.text(
+                    `There are ${levelsCount} levels of approximately ${Math.round(levelMinutes)} minutes of play each.`,
+                    14,
+                    cursorY
+                );
+                cursorY += 4;
+
+                const scheduleBody = schedule.map(level => {
+                    const start = formatMinutesToClock(level.startMinutes);
+                    const end = formatMinutesToClock(level.endMinutes);
+                    const length = `${Math.round(levelMinutes)} min`;
+                    const breakText = level.breakAfter ? `${level.breakLengthForLevel} min break` : '';
                     return [
-                        `T${denom}`,
-                        String(u.perPlayer),
-                        String(u.totalUsed),
-                        String(u.inventory),
-                        String(u.remaining)
+                        String(level.level),
+                        `${level.sb}/${level.bb}`,
+                        start,
+                        end,
+                        length,
+                        breakText
                     ];
                 });
 
-            doc.autoTable({
-                startY: cursorY,
-                head: [['Denomination', 'Chips / Player', 'Total Used', 'Inventory', 'Remaining']],
-                body: chipBody,
-                styles: { fontSize: 9, cellPadding: 1.5 },
-                headStyles: { fillColor: [15, 23, 42], textColor: 255 }
-            });
+                doc.autoTable({
+                    startY: cursorY,
+                    head: [['Lvl', 'SB/BB', 'Starts', 'Ends', 'Length', 'Break After']],
+                    body: scheduleBody,
+                    styles: { fontSize: 9, cellPadding: 1.5 },
+                    headStyles: { fillColor: [15, 23, 42], textColor: 255 }
+                });
 
-            cursorY = doc.lastAutoTable.finalY + 6;
-
-            doc.setFontSize(9);
-            doc.text(
-                'Note: This uses only part of a 300-chip set, leaving plenty of chips for rebuys or color-ups.',
-                14,
-                cursorY
-            );
-            cursorY += 6;
-
-            // New page if needed
-            if (cursorY > 220) {
-                doc.addPage();
-                cursorY = 14;
-            }
-
-            // Section 4: Blind schedule
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(13);
-            doc.text('Blind Level Schedule', 14, cursorY);
-            cursorY += 4;
-
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10);
-            doc.text(
-                `There are ${levelsCount} levels of approximately ${Math.round(levelMinutes)} minutes of play each.`,
-                14,
-                cursorY
-            );
-            cursorY += 4;
-
-            const scheduleBody = schedule.map(level => {
-                const start = formatMinutesToClock(level.startMinutes);
-                const end = formatMinutesToClock(level.endMinutes);
-                const length = `${Math.round(levelMinutes)} min`;
-                const breakText = level.breakAfter ? `${level.breakLengthForLevel} min break` : '';
-                return [
-                    String(level.level),
-                    `${level.sb}/${level.bb}`,
-                    start,
-                    end,
-                    length,
-                    breakText
-                ];
-            });
-
-            doc.autoTable({
-                startY: cursorY,
-                head: [['Lvl', 'SB/BB', 'Starts', 'Ends', 'Length', 'Break After']],
-                body: scheduleBody,
-                styles: { fontSize: 9, cellPadding: 1.5 },
-                headStyles: { fillColor: [15, 23, 42], textColor: 255 }
-            });
-
-            // Save file
-            // Save / open file
-            // Open PDF in a new tab/window instead of trying to "download" it
-            try {
-                // This works well across desktop + iOS browsers
-                doc.output('dataurlnewwindow');
-            } catch (e) {
-                // As a fallback, just alert the error so we know what's going on
-                alert('Error generating PDF: ' + (e && e.message ? e.message : e));
-            }
-
-            // iOS browsers are bad at "downloads" triggered by JS.
-            // Instead, open the PDF in a new tab so the user can share/save it.
-            if (isIOS()) {
+                // Save file
+                // Save / open file
+                // Open PDF in a new tab/window instead of trying to "download" it
                 try {
-                    const blobUrl = doc.output('bloburl');
-                    window.open(blobUrl, '_blank');
-                } catch (e) {
-                    // Fallback: data URL
+                    // This works well across desktop + iOS browsers
                     doc.output('dataurlnewwindow');
+                } catch (e) {
+                    // As a fallback, just alert the error so we know what's going on
+                    alert('Error generating PDF: ' + (e && e.message ? e.message : e));
                 }
-            } else {
-                // Desktop and non-iOS browsers: normal download
-                doc.save(filename);
+
+                // iOS browsers are bad at "downloads" triggered by JS.
+                // Instead, open the PDF in a new tab so the user can share/save it.
+                if (isIOS()) {
+                    try {
+                        const blobUrl = doc.output('bloburl');
+                        window.open(blobUrl, '_blank');
+                    } catch (e) {
+                        // Fallback: data URL
+                        doc.output('dataurlnewwindow');
+                    }
+                } else {
+                    // Desktop and non-iOS browsers: normal download
+                    doc.save(filename);
+                }
             }
-        }
 
-        // --- Event wiring ---
+            // --- Event wiring ---
 
-        function recalcPreview() {
-            const structure = calculateStructure();
-            renderPreview(structure);
-            return structure;
-        }
+            function recalcPreview() {
+                const structure = calculateStructure();
+                renderPreview(structure);
+                return structure;
+            }
 
-        document.getElementById('useBreaks').addEventListener('change', (e) => {
-            document.getElementById('breaksConfig').style.display = e.target.checked ? 'block' : 'none';
-            recalcPreview();
-        });
+            document.getElementById('useBreaks').addEventListener('change', (e) => {
+                document.getElementById('breaksConfig').style.display = e.target.checked ? 'block' : 'none';
+                recalcPreview();
+            });
 
-        document.getElementById('allowRebuys').addEventListener('change', (e) => {
-            document.getElementById('rebuysConfig').style.display = e.target.checked ? 'block' : 'none';
-            recalcPreview();
-        });
+            document.getElementById('allowRebuys').addEventListener('change', (e) => {
+                document.getElementById('rebuysConfig').style.display = e.target.checked ? 'block' : 'none';
+                recalcPreview();
+            });
 
-        ['players', 'runtimeHours', 'breakMinutes', 'breakFrequencyHours', 'rebuyCutoffHours']
-            .forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    el.addEventListener('input', () => {
-                        recalcPreview();
+            ['players', 'runtimeHours', 'breakMinutes', 'breakFrequencyHours', 'rebuyCutoffHours']
+                .forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.addEventListener('input', () => {
+                            recalcPreview();
+                        });
+                    }
+                });
+
+            document.getElementById('generateBtn').addEventListener('click', () => {
+                const structure = calculateStructure();
+                if (!structure) return;
+
+                // Track usage in Google Analytics if gtag is available
+                if (typeof gtag === 'function') {
+                    gtag('event', 'generate_pdf', {
+                        players: structure.players,
+                        runtime_hours: structure.runtimeHours,
+                        breaks_enabled: structure.useBreaks,
+                        rebuys_enabled: structure.allowRebuys
                     });
                 }
+
+                generatePdf(structure);
             });
 
-        document.getElementById('generateBtn').addEventListener('click', () => {
-            const structure = calculateStructure();
-            if (!structure) return;
-
-            // Track usage in Google Analytics if gtag is available
-            if (typeof gtag === 'function') {
-                gtag('event', 'generate_pdf', {
-                    players: structure.players,
-                    runtime_hours: structure.runtimeHours,
-                    breaks_enabled: structure.useBreaks,
-                    rebuys_enabled: structure.allowRebuys
-                });
-            }
-
-            generatePdf(structure);
-        });
-
-        // Initial preview
-        window.addEventListener('load', () => {
-            initChipColorsUI();
-            recalcPreview();
-        });
-    </script>
+            // Initial preview
+            window.addEventListener('load', () => {
+                initChipColorsUI();
+                recalcPreview();
+            });
+        </script>
 </body>
 
 </html>
