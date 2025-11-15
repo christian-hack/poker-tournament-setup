@@ -318,6 +318,18 @@
                         </div>
 
                         <div class="form-row">
+                            <label for="structureSpeed">Structure speed</label>
+                            <select id="structureSpeed">
+                                <option value="slow">Slow (deeper, longer)</option>
+                                <option value="normal" selected>Normal</option>
+                                <option value="turbo">Turbo (faster)</option>
+                            </select>
+                            <span class="helper">
+                                Controls how quickly blinds grow for the same runtime.
+                            </span>
+                        </div>
+
+                        <div class="form-row">
                             <div class="checkbox-row">
                                 <input id="useBreaks" type="checkbox" />
                                 <label for="useBreaks">Schedule breaks?</label>
@@ -475,6 +487,10 @@
             const breaksConfig = document.getElementById('breaksConfig');
             const allowRebuys = document.getElementById('allowRebuys');
             const rebuysConfig = document.getElementById('rebuysConfig');
+            const speedSelect = document.getElementById('structureSpeed');
+            if (speedSelect) {
+              speedSelect.addEventListener('change', recalcAll);
+            }
 
             useBreaks.addEventListener('change', () => {
                 breaksConfig.style.display = useBreaks.checked ? 'block' : 'none';
@@ -841,10 +857,22 @@
             // --- Option C: dynamic exponential blind curve ---
             // Start big blind at 2× smallest chip
             let startBBRaw = minChip * 2;
-
-            // Aim for average stack ≈ 12 BB by final level
-            const targetAvgBBAtEnd = 12;
+                    
+            // Pick target depth of average stack at the final level based on speed
+            const speedEl = document.getElementById('structureSpeed');
+            const speed = speedEl ? speedEl.value : 'normal';
+            let targetAvgBBAtEnd;
+                    
+            if (speed === 'slow') {
+              targetAvgBBAtEnd = 16;  // slower blind growth, deeper average stack
+            } else if (speed === 'turbo') {
+              targetAvgBBAtEnd = 8;   // faster blind growth, shallower avg stack
+            } else {
+              targetAvgBBAtEnd = 12;  // normal
+            }
+            
             let endBBRaw = startingStackValue / targetAvgBBAtEnd;
+
 
             // Make sure we actually grow (in case stack is tiny)
             if (endBBRaw < startBBRaw * 2) {
