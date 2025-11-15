@@ -392,7 +392,7 @@
                     </div>
 
                     <div class="form-row" style="margin-top: 10px;">
-                        <label>How many chips should starting stacks use?</label>
+                        <label>How many of the total chips should starting stacks use?</label>
                         <div class="inline-row" style="flex-wrap: wrap; gap: 8px;">
                             <label><input type="radio" name="stackUsageMode" value="some" checked /> Some</label>
                             <label><input type="radio" name="stackUsageMode" value="half" /> About half</label>
@@ -579,7 +579,7 @@
                     colorSelect.style.width = '110px';
 
                     const countLabel = document.createElement('span');
-                    countLabel.textContent = 'Available:';
+                    countLabel.textContent = 'Total Available:';
 
                     const countInput = document.createElement('input');
                     countInput.type = 'number';
@@ -857,12 +857,12 @@
             // --- Option C: dynamic exponential blind curve ---
             // Start big blind at 2× smallest chip
             let startBBRaw = minChip * 2;
-                    
+
             // Pick target depth of average stack at the final level based on speed
             const speedEl = document.getElementById('structureSpeed');
             const speed = speedEl ? speedEl.value : 'normal';
             let targetAvgBBAtEnd;
-                    
+
             if (speed === 'slow') {
               targetAvgBBAtEnd = 16;  // slower blind growth, deeper average stack
             } else if (speed === 'turbo') {
@@ -870,7 +870,7 @@
             } else {
               targetAvgBBAtEnd = 12;  // normal
             }
-            
+
             let endBBRaw = startingStackValue / targetAvgBBAtEnd;
 
 
