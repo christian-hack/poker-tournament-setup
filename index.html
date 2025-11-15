@@ -5,11 +5,11 @@
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-QQ737235G7"></script>
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
 
-      gtag('config', 'G-QQ737235G7');
+        gtag('config', 'G-QQ737235G7');
     </script>
     <!-- jsPDF & jsPDF-AutoTable from CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -380,32 +380,32 @@
             </section>
             <!-- New Chip Setup card -->
             <section class="card" style="margin-top: 10px;">
-              <h2>Chip Setup</h2>
-              <div class="form-grid">
-                <div class="form-row">
-                  <label for="chipColorsCount">Number of chip colors in use</label>
-                  <input id="chipColorsCount" type="number" min="1" max="8" value="4" />
-                  <span class="helper">
-                    Each color usually maps to a denomination (e.g., T25, T100, T500, T1000).
-                  </span>
+                <h2>Chip Setup</h2>
+                <div class="form-grid">
+                    <div class="form-row">
+                        <label for="chipColorsCount">Number of chip colors in use</label>
+                        <input id="chipColorsCount" type="number" min="1" max="8" value="4" />
+                        <span class="helper">
+                            Each color usually maps to a denomination (e.g., T25, T100, T500, T1000).
+                        </span>
+                    </div>
+
+                    <div class="form-row">
+                        <label for="chipsInPlay">Chips to use in tournament</label>
+                        <input id="chipsInPlay" type="number" min="0" value="300" />
+                        <span class="helper" id="chipsInPlayHelper">
+                            Will be constrained based on your chip counts and number of players.
+                        </span>
+                    </div>
                 </div>
-            
-                <div class="form-row">
-                  <label for="chipsInPlay">Chips to use in tournament</label>
-                  <input id="chipsInPlay" type="number" min="0" value="300" />
-                  <span class="helper" id="chipsInPlayHelper">
-                    Will be constrained based on your chip counts and number of players.
-                  </span>
+
+                <div id="chipColorsContainer" style="margin-top: 10px;">
+                    <!-- Dynamic rows will be injected here -->
                 </div>
-              </div>
-          
-              <div id="chipColorsContainer" style="margin-top: 10px;">
-                <!-- Dynamic rows will be injected here -->
-              </div>
-          
-              <div class="small-note" id="chipSummaryNote" style="margin-top: 6px;">
-                Enter your chip counts above to see totals and recommended chips in play.
-              </div>
+
+                <div class="small-note" id="chipSummaryNote" style="margin-top: 6px;">
+                    Enter your chip counts above to see totals and recommended chips in play.
+                </div>
             </section>
             <!-- Preview side -->
             <section class="card preview-card">
@@ -496,115 +496,115 @@
         const STARTING_STACK_CHIPS_PER_PLAYER = 18; // 4+4+5+5 from your current structure
 
         function initChipColorsUI() {
-          const chipColorsCountInput = document.getElementById('chipColorsCount');
-          const container = document.getElementById('chipColorsContainer');
-        
-          function rebuildRows() {
-            const count = clamp(parseInt(chipColorsCountInput.value || '0', 10), 1, 8);
-            chipColorsCountInput.value = count;
-        
-            container.innerHTML = '';
-            chipColorRows = [];
-        
-            for (let i = 0; i < count; i++) {
-              const row = document.createElement('div');
-              row.className = 'inline-row';
-              row.style.marginTop = '4px';
-            
-              const labelSpan = document.createElement('span');
-              labelSpan.textContent = `Color ${i + 1}:`;
-            
-              const nameInput = document.createElement('input');
-              nameInput.type = 'text';
-              nameInput.placeholder = `e.g. T${i === 0 ? 25 : i === 1 ? 100 : i === 2 ? 500 : 1000}`;
-              nameInput.style.width = '120px';
-              nameInput.style.borderRadius = '9px';
-              nameInput.style.border = '1px solid #4b5563';
-              nameInput.style.background = '#020617';
-              nameInput.style.color = '#e5e7eb';
-              nameInput.style.padding = '6px 8px';
-              nameInput.style.fontSize = '0.85rem';
-            
-              const countLabel = document.createElement('span');
-              countLabel.textContent = 'Available:';
-            
-              const countInput = document.createElement('input');
-              countInput.type = 'number';
-              countInput.min = '0';
-              countInput.value = '50';
-              countInput.style.width = '80px';
-            
-              row.appendChild(labelSpan);
-              row.appendChild(nameInput);
-              row.appendChild(countLabel);
-              row.appendChild(countInput);
-              container.appendChild(row);
-            
-              chipColorRows.push({ nameInput, countInput });
-            
-              nameInput.addEventListener('input', recalcChipUsage);
-              countInput.addEventListener('input', recalcChipUsage);
+            const chipColorsCountInput = document.getElementById('chipColorsCount');
+            const container = document.getElementById('chipColorsContainer');
+
+            function rebuildRows() {
+                const count = clamp(parseInt(chipColorsCountInput.value || '0', 10), 1, 8);
+                chipColorsCountInput.value = count;
+
+                container.innerHTML = '';
+                chipColorRows = [];
+
+                for (let i = 0; i < count; i++) {
+                    const row = document.createElement('div');
+                    row.className = 'inline-row';
+                    row.style.marginTop = '4px';
+
+                    const labelSpan = document.createElement('span');
+                    labelSpan.textContent = `Color ${i + 1}:`;
+
+                    const nameInput = document.createElement('input');
+                    nameInput.type = 'text';
+                    nameInput.placeholder = `e.g. T${i === 0 ? 25 : i === 1 ? 100 : i === 2 ? 500 : 1000}`;
+                    nameInput.style.width = '120px';
+                    nameInput.style.borderRadius = '9px';
+                    nameInput.style.border = '1px solid #4b5563';
+                    nameInput.style.background = '#020617';
+                    nameInput.style.color = '#e5e7eb';
+                    nameInput.style.padding = '6px 8px';
+                    nameInput.style.fontSize = '0.85rem';
+
+                    const countLabel = document.createElement('span');
+                    countLabel.textContent = 'Available:';
+
+                    const countInput = document.createElement('input');
+                    countInput.type = 'number';
+                    countInput.min = '0';
+                    countInput.value = '50';
+                    countInput.style.width = '80px';
+
+                    row.appendChild(labelSpan);
+                    row.appendChild(nameInput);
+                    row.appendChild(countLabel);
+                    row.appendChild(countInput);
+                    container.appendChild(row);
+
+                    chipColorRows.push({ nameInput, countInput });
+
+                    nameInput.addEventListener('input', recalcChipUsage);
+                    countInput.addEventListener('input', recalcChipUsage);
+                }
+
+                recalcChipUsage();
             }
-        
-            recalcChipUsage();
-          }
-      
-          chipColorsCountInput.addEventListener('input', rebuildRows);
-          rebuildRows();
+
+            chipColorsCountInput.addEventListener('input', rebuildRows);
+            rebuildRows();
         }
 
         // Recompute totals + recommended chipsInPlay
         function recalcChipUsage() {
-          const playersInput = document.getElementById('players');
-          const chipsInPlayInput = document.getElementById('chipsInPlay');
-          const helper = document.getElementById('chipsInPlayHelper');
-          const summaryNote = document.getElementById('chipSummaryNote');
-        
-          const players = clamp(parseInt(playersInput.value || '0', 10), 1, 50);
-        
-          // Sum all available chips
-          let totalAvailable = 0;
-          chipColorRows.forEach(row => {
-            const count = parseInt(row.countInput.value || '0', 10);
-            if (!isNaN(count) && count > 0) {
-              totalAvailable += count;
+            const playersInput = document.getElementById('players');
+            const chipsInPlayInput = document.getElementById('chipsInPlay');
+            const helper = document.getElementById('chipsInPlayHelper');
+            const summaryNote = document.getElementById('chipSummaryNote');
+
+            const players = clamp(parseInt(playersInput.value || '0', 10), 1, 50);
+
+            // Sum all available chips
+            let totalAvailable = 0;
+            chipColorRows.forEach(row => {
+                const count = parseInt(row.countInput.value || '0', 10);
+                if (!isNaN(count) && count > 0) {
+                    totalAvailable += count;
+                }
+            });
+
+            if (totalAvailable === 0 || players === 0) {
+                helper.textContent = 'Enter your chip counts and number of players to see recommended usage.';
+                summaryNote.textContent = 'No chip counts or players yet. Using default 300 chips for now.';
+                return;
             }
-          });
-      
-          if (totalAvailable === 0 || players === 0) {
-            helper.textContent = 'Enter your chip counts and number of players to see recommended usage.';
-            summaryNote.textContent = 'No chip counts or players yet. Using default 300 chips for now.';
-            return;
-          }
-      
-          // Minimum chips: enough to deal starting stacks
-          const minNeeded = players * STARTING_STACK_CHIPS_PER_PLAYER;
-      
-          // Recommended max: enough for everyone to rebuy once
-          const recommendedMax = Math.min(
-            totalAvailable,
-            minNeeded + players * STARTING_STACK_CHIPS_PER_PLAYER
-          );
-      
-          // If the user hasn't touched chipsInPlay yet or it's 0, suggest something
-          let current = parseInt(chipsInPlayInput.value || '0', 10);
-          if (!current || current < minNeeded || current > totalAvailable) {
-            current = Math.min(recommendedMax, totalAvailable);
-            chipsInPlayInput.value = current;
-          }
-      
-          // Adjust min/max attributes for future edits
-          chipsInPlayInput.min = String(minNeeded);
-          chipsInPlayInput.max = String(totalAvailable);
-      
-          helper.textContent =
-            `You have ${totalAvailable} chips total. ` +
-            `Minimum needed for ${players} players is ${minNeeded}. ` +
-            `Recommended: between ${minNeeded} and ${recommendedMax} chips in play.`;
-      
-          summaryNote.textContent =
-            `Total available chips: ${totalAvailable}. ` +
-            `Currently planning to use ${current} in the tournament.`;
+
+            // Minimum chips: enough to deal starting stacks
+            const minNeeded = players * STARTING_STACK_CHIPS_PER_PLAYER;
+
+            // Recommended max: enough for everyone to rebuy once
+            const recommendedMax = Math.min(
+                totalAvailable,
+                minNeeded + players * STARTING_STACK_CHIPS_PER_PLAYER
+            );
+
+            // If the user hasn't touched chipsInPlay yet or it's 0, suggest something
+            let current = parseInt(chipsInPlayInput.value || '0', 10);
+            if (!current || current < minNeeded || current > totalAvailable) {
+                current = Math.min(recommendedMax, totalAvailable);
+                chipsInPlayInput.value = current;
+            }
+
+            // Adjust min/max attributes for future edits
+            chipsInPlayInput.min = String(minNeeded);
+            chipsInPlayInput.max = String(totalAvailable);
+
+            helper.textContent =
+                `You have ${totalAvailable} chips total. ` +
+                `Minimum needed for ${players} players is ${minNeeded}. ` +
+                `Recommended: between ${minNeeded} and ${recommendedMax} chips in play.`;
+
+            summaryNote.textContent =
+                `Total available chips: ${totalAvailable}. ` +
+                `Currently planning to use ${current} in the tournament.`;
         }
 
         // --- Core calculation for one configuration ---
@@ -1086,26 +1086,26 @@
             // Save / open file
             // Open PDF in a new tab/window instead of trying to "download" it
             try {
-              // This works well across desktop + iOS browsers
-              doc.output('dataurlnewwindow');
+                // This works well across desktop + iOS browsers
+                doc.output('dataurlnewwindow');
             } catch (e) {
-              // As a fallback, just alert the error so we know what's going on
-              alert('Error generating PDF: ' + (e && e.message ? e.message : e));
+                // As a fallback, just alert the error so we know what's going on
+                alert('Error generating PDF: ' + (e && e.message ? e.message : e));
             }
 
             // iOS browsers are bad at "downloads" triggered by JS.
             // Instead, open the PDF in a new tab so the user can share/save it.
             if (isIOS()) {
-              try {
-                const blobUrl = doc.output('bloburl');
-                window.open(blobUrl, '_blank');
-              } catch (e) {
-                // Fallback: data URL
-                doc.output('dataurlnewwindow');
-              }
+                try {
+                    const blobUrl = doc.output('bloburl');
+                    window.open(blobUrl, '_blank');
+                } catch (e) {
+                    // Fallback: data URL
+                    doc.output('dataurlnewwindow');
+                }
             } else {
-              // Desktop and non-iOS browsers: normal download
-              doc.save(filename);
+                // Desktop and non-iOS browsers: normal download
+                doc.save(filename);
             }
         }
 
@@ -1138,26 +1138,26 @@
             });
 
         document.getElementById('generateBtn').addEventListener('click', () => {
-          const structure = calculateStructure();
-          if (!structure) return;
+            const structure = calculateStructure();
+            if (!structure) return;
 
-          // Track usage in Google Analytics if gtag is available
-          if (typeof gtag === 'function') {
-            gtag('event', 'generate_pdf', {
-              players: structure.players,
-              runtime_hours: structure.runtimeHours,
-              breaks_enabled: structure.useBreaks,
-              rebuys_enabled: structure.allowRebuys
-            });
-          }
-      
-          generatePdf(structure);
+            // Track usage in Google Analytics if gtag is available
+            if (typeof gtag === 'function') {
+                gtag('event', 'generate_pdf', {
+                    players: structure.players,
+                    runtime_hours: structure.runtimeHours,
+                    breaks_enabled: structure.useBreaks,
+                    rebuys_enabled: structure.allowRebuys
+                });
+            }
+
+            generatePdf(structure);
         });
 
         // Initial preview
         window.addEventListener('load', () => {
-          initChipColorsUI();
-          recalcPreview();
+            initChipColorsUI();
+            recalcPreview();
         });
     </script>
 </body>
