@@ -142,7 +142,7 @@
         }
 
         input[type="number"],
-        input[type="text"] {
+        select {
             border-radius: 9px;
             border: 1px solid #4b5563;
             background: #020617;
@@ -153,7 +153,7 @@
         }
 
         input[type="number"]:focus,
-        input[type="text"]:focus {
+        select:focus {
             outline: 2px solid #22c55e;
             outline-offset: 1px;
             border-color: #22c55e;
@@ -378,9 +378,9 @@
                     <div class="form-grid">
                         <div class="form-row">
                             <label for="chipColorsCount">Number of chip colors in use</label>
-                            <input id="chipColorsCount" type="number" min="1" max="8" value="4" />
+                            <input id="chipColorsCount" type="number" min="1" max="5" value="4" />
                             <span class="helper">
-                                Define each chip color’s label, value, and how many you actually have.
+                                Choose from White, Red, Green, Blue, Black. The app assumes the usual value order.
                             </span>
                         </div>
                     </div>
@@ -402,8 +402,19 @@
                         </span>
                     </div>
 
+                    <div class="form-row" style="margin-top: 8px;">
+                        <label>Chip value scale</label>
+                        <div class="inline-row">
+                            <button type="button" id="decreaseValuesBtn">Decrease values</button>
+                            <button type="button" id="increaseValuesBtn">Increase values</button>
+                        </div>
+                        <span class="helper" id="valueScaleLabel">
+                            Current values will be shown here after you enter chip colors.
+                        </span>
+                    </div>
+
                     <div class="small-note" id="chipSummaryNote" style="margin-top: 6px;">
-                        Enter chip counts and values above to see a suggested starting stack per player.
+                        Enter chip counts above to see a suggested starting stack per player.
                     </div>
                 </section>
             </div>
@@ -435,11 +446,12 @@
             return Math.max(min, Math.min(max, v));
         }
 
-        let chipColorRows = [];            // { nameInput, valueInput, countInput }
+        const COLOR_OPTIONS = ['White', 'Red', 'Green', 'Blue', 'Black'];
+        let chipColorRows = [];            // { colorSelect, countInput }
         let currentStackSuggestion = null; // { chipsPerPlayer, totalValuePerPlayer, colors[] }
+        let valueScaleStep = 0;            // 0 = base, +1 = x2, -1 = x0.5, etc.
         const MIN_CHIPS_PER_PLAYER = 12;
 
-        // --- Initialization ---
         window.addEventListener('load', () => {
             setupFormInteractions();
             initChipColorsUI();
@@ -469,6 +481,20 @@
                 }
             });
 
+            document.querySelectorAll('input[name="stackUsageMode"]').forEach(radio => {
+                radio.addEventListener('change', recalcAll);
+            });
+
+            document.getElementById('decreaseValuesBtn').addEventListener('click', () => {
+                valueScaleStep = Math.max(valueScaleStep - 1, -2); // limit how tiny it gets
+                recalcAll();
+            });
+
+            document.getElementById('increaseValuesBtn').addEventListener('click', () => {
+                valueScaleStep = Math.min(valueScaleStep + 1, 3); // limit how huge it gets
+                recalcAll();
+            });
+
             document.getElementById('generateBtn').addEventListener('click', () => {
                 const structure = calculateStructure();
                 if (!structure) return;
@@ -492,13 +518,13 @@
             renderPreview(structure);
         }
 
-        // --- Chip Setup UI & suggestion logic ---
+        // --- Chip Setup UI ---
         function initChipColorsUI() {
             const chipColorsCountInput = document.getElementById('chipColorsCount');
             const container = document.getElementById('chipColorsContainer');
 
             function rebuildRows() {
-                const count = clamp(parseInt(chipColorsCountInput.value || '0', 10), 1, 8);
+                const count = clamp(parseInt(chipColorsCountInput.value || '0', 10), 1, 5);
                 chipColorsCountInput.value = count;
 
                 container.innerHTML = '';
@@ -514,25 +540,15 @@
                     const labelSpan = document.createElement('span');
                     labelSpan.textContent = `Color ${i + 1}:`;
 
-                    const nameInput = document.createElement('input');
-                    nameInput.type = 'text';
-                    nameInput.placeholder = `Label (e.g. T${i === 0 ? 25 : i === 1 ? 100 : i === 2 ? 500 : 1000})`;
-                    nameInput.style.width = '140px';
-                    nameInput.style.borderRadius = '9px';
-                    nameInput.style.border = '1px solid #4b5563';
-                    nameInput.style.background = '#020617';
-                    nameInput.style.color = '#e5e7eb';
-                    nameInput.style.padding = '6px 8px';
-                    nameInput.style.fontSize = '0.85rem';
-
-                    const valueLabel = document.createElement('span');
-                    valueLabel.textContent = 'Value:';
-
-                    const valueInput = document.createElement('input');
-                    valueInput.type = 'number';
-                    valueInput.min = '1';
-                    valueInput.placeholder = i === 0 ? '25' : i === 1 ? '100' : i === 2 ? '500' : '1000';
-                    valueInput.style.width = '80px';
+                    const colorSelect = document.createElement('select');
+                    COLOR_OPTIONS.forEach((color, idx) => {
+                        const opt = document.createElement('option');
+                        opt.value = color;
+                        opt.textContent = color;
+                        colorSelect.appendChild(opt);
+                    });
+                    colorSelect.selectedIndex = i < COLOR_OPTIONS.length ? i : 0;
+                    colorSelect.style.width = '110px';
 
                     const countLabel = document.createElement('span');
                     countLabel.textContent = 'Available:';
@@ -544,80 +560,98 @@
                     countInput.style.width = '80px';
 
                     row.appendChild(labelSpan);
-                    row.appendChild(nameInput);
-                    row.appendChild(valueLabel);
-                    row.appendChild(valueInput);
+                    row.appendChild(colorSelect);
                     row.appendChild(countLabel);
                     row.appendChild(countInput);
                     container.appendChild(row);
 
-                    chipColorRows.push({ nameInput, valueInput, countInput });
+                    chipColorRows.push({ colorSelect, countInput });
 
-                    nameInput.addEventListener('input', () => {
-                        recalcChipUsageAndStacks();
-                        recalcAll();
-                    });
-                    valueInput.addEventListener('input', () => {
-                        recalcChipUsageAndStacks();
-                        recalcAll();
-                    });
-                    countInput.addEventListener('input', () => {
-                        recalcChipUsageAndStacks();
-                        recalcAll();
-                    });
+                    colorSelect.addEventListener('change', recalcAll);
+                    countInput.addEventListener('input', recalcAll);
                 }
 
-                recalcChipUsageAndStacks();
+                recalcAll();
             }
 
-            chipColorsCountInput.addEventListener('input', () => {
-                rebuildRows();
-                recalcAll();
-            });
-
-            document.querySelectorAll('input[name="stackUsageMode"]').forEach(radio => {
-                radio.addEventListener('change', () => {
-                    recalcChipUsageAndStacks();
-                    recalcAll();
-                });
-            });
-
+            chipColorsCountInput.addEventListener('input', rebuildRows);
             rebuildRows();
         }
 
+        function getColorCounts() {
+            const colorCounts = {};
+            COLOR_OPTIONS.forEach(c => { colorCounts[c] = 0; });
+
+            chipColorRows.forEach(row => {
+                const color = row.colorSelect.value;
+                const count = parseInt(row.countInput.value || '0', 10);
+                if (!isNaN(count) && count > 0) {
+                    colorCounts[color] += count;
+                }
+            });
+
+            // Build array of used colors
+            const used = [];
+            COLOR_OPTIONS.forEach(color => {
+                const count = colorCounts[color];
+                if (count > 0) {
+                    used.push({ name: color, count });
+                }
+            });
+
+            return { colorCounts, usedColors: used };
+        }
+
+        function computeColorValues(usedColors) {
+            // Base patterns by number of colors (typical "feel"):
+            const basePatterns = {
+                1: [25],
+                2: [25, 100],
+                3: [25, 100, 500],
+                4: [25, 100, 500, 1000],
+                5: [25, 100, 500, 1000, 5000]
+            };
+
+            const n = usedColors.length;
+            if (n === 0) return {};
+
+            const base = (basePatterns[n] || basePatterns[5].slice(0, n)).slice();
+            const multiplier = Math.pow(2, valueScaleStep);
+
+            const map = {};
+            for (let i = 0; i < n; i++) {
+                map[usedColors[i].name] = base[i] * multiplier;
+            }
+            return map;
+        }
+
+        // --- Chip usage + suggested starting stack ---
         function recalcChipUsageAndStacks() {
             const playersInput = document.getElementById('players');
             const helper = document.getElementById('stackUsageHelper');
             const summaryNote = document.getElementById('chipSummaryNote');
+            const valueScaleLabel = document.getElementById('valueScaleLabel');
 
             const players = clamp(parseInt(playersInput.value || '0', 10), 1, 50);
 
-            const colors = [];
-            chipColorRows.forEach((row, idx) => {
-                const rawName = row.nameInput.value.trim();
-                const name = rawName || `Color ${idx + 1}`;
-                const count = parseInt(row.countInput.value || '0', 10);
-                const rawVal = row.valueInput.value.trim();
-                const value = rawVal ? parseFloat(rawVal) : (idx === 0 ? 25 : idx === 1 ? 100 : idx === 2 ? 500 : 1000);
-
-                if (!isNaN(count) && count > 0) {
-                    colors.push({ name, count, value, index: idx });
-                }
-            });
-
-            const totalChips = colors.reduce((sum, c) => sum + c.count, 0);
+            const { usedColors } = getColorCounts();
+            const totalChips = usedColors.reduce((sum, c) => sum + c.count, 0);
 
             if (totalChips === 0 || !players) {
-                helper.textContent = 'Enter chip counts, values, and number of players to see a suggested stack.';
+                helper.textContent = 'Enter chip counts and number of players to see a suggested stack.';
                 summaryNote.textContent = 'No chip counts or players yet.';
+                valueScaleLabel.textContent = 'Current values will be shown here after you enter chip colors.';
                 currentStackSuggestion = null;
                 return;
             }
 
+            // Values follow the color order: White < Red < Green < Blue < Black
+            const valueMap = computeColorValues(usedColors);
+
             const modeRadio = document.querySelector('input[name="stackUsageMode"]:checked');
             const mode = modeRadio ? modeRadio.value : 'half';
             const usageFractions = { some: 0.25, half: 0.5, most: 0.75, max: 0.9 };
-            let fraction = usageFractions[mode] || 0.5;
+            const fraction = usageFractions[mode] || 0.5;
 
             let chipsForStacks = Math.floor(totalChips * fraction);
             const minNeeded = players * MIN_CHIPS_PER_PLAYER;
@@ -644,15 +678,17 @@
                 return;
             }
 
-            colors.sort((a, b) => a.value - b.value);
-
-            const perPlayer = colors.map(c => ({
-                name: c.name,
-                value: c.value,
-                available: c.count,
-                perPlayerCount: 0,
-                maxPerPlayer: Math.floor(c.count / players)
-            }));
+            // Sort used colors by their implied value order (White..Black)
+            const perPlayer = usedColors
+                .map(c => ({
+                    name: c.name,
+                    value: valueMap[c.name],
+                    available: c.count,
+                    perPlayerCount: 0,
+                    maxPerPlayer: Math.floor(c.count / players),
+                    rank: COLOR_OPTIONS.indexOf(c.name)
+                }))
+                .sort((a, b) => a.rank - b.rank);
 
             const N = perPlayer.length;
             const baseTarget = Math.floor(chipsPerPlayer / N);
@@ -686,6 +722,9 @@
             helper.textContent =
                 `You have ${totalChips} chips across ${N} colors. Mode “${mode}” uses about ` +
                 `${chipsPerPlayer * players} chips total (~${chipsPerPlayer} per player).`;
+
+            const valuePairs = perPlayer.map(c => `${c.name} = ${c.value}`).join(', ');
+            valueScaleLabel.textContent = `Current chip values: ${valuePairs}`;
 
             summaryNote.textContent =
                 `Suggested starting stack: ~${chipsPerPlayer} chips per player, ` +
@@ -745,17 +784,17 @@
                 startingStackValue = currentStackSuggestion.totalValuePerPlayer;
             }
 
-            const chipValues = [];
-            chipColorRows.forEach((row, idx) => {
-                const rawVal = row.valueInput.value.trim();
-                const value = rawVal ? parseFloat(rawVal) : (idx === 0 ? 25 : idx === 1 ? 100 : idx === 2 ? 500 : 1000);
-                if (!isNaN(value) && value > 0) chipValues.push(value);
-            });
+            // For blinds, base on the smallest chip value in use
+            let chipValues = [];
+            if (currentStackSuggestion && currentStackSuggestion.colors.length) {
+                chipValues = currentStackSuggestion.colors.map(c => c.value);
+            } else {
+                chipValues = [25, 100, 500, 1000]; // fallback
+            }
             const minChip = chipValues.length ? Math.min(...chipValues) : 25;
 
             const baseSB = minChip;
             const schedule = [];
-            const totalMinutesNoBreaks = runtimeHours * 60;
             let elapsed = 0;
             let blindSB = baseSB;
             let blindBB = blindSB * 2;
@@ -837,6 +876,51 @@
         </table>
       `;
 
+            let startingStackHtml = '';
+            if (currentStackSuggestion) {
+                const stack = currentStackSuggestion;
+                const rowsHtml = stack.colors
+                    .filter(c => c.perPlayerCount > 0)
+                    .map(c => {
+                        const totalUsed = c.perPlayerCount * structure.players;
+                        return `
+              <tr>
+                <td>${c.name}</td>
+                <td>${c.value}</td>
+                <td>${c.perPlayerCount}</td>
+                <td>${totalUsed}</td>
+              </tr>`;
+                    })
+                    .join('');
+
+                startingStackHtml = `
+          <div class="preview-section-title">Suggested Starting Stack (per player)</div>
+          <span class="small-note">
+            Approx. ${stack.chipsPerPlayer} chips per player, total value ~${stack.totalValuePerPlayer.toLocaleString()}.
+          </span>
+          <div class="scroll-box">
+            <table>
+              <thead>
+                <tr>
+                  <th>Color</th>
+                  <th>Value</th>
+                  <th>Chips / Player</th>
+                  <th>Total Used</th>
+                </tr>
+              </thead>
+              <tbody>${rowsHtml}</tbody>
+            </table>
+          </div>
+        `;
+            } else {
+                startingStackHtml = `
+          <div class="preview-section-title">Suggested Starting Stack (per player)</div>
+          <span class="small-note muted">
+            Define chip colors and counts to see a suggested stack.
+          </span>
+        `;
+            }
+
             let breaksHtml = '';
             if (useBreaks && breaks.length) {
                 const rows = breaks.map((b, idx) => {
@@ -880,51 +964,6 @@
           <div class="preview-section-title">Rebuys</div>
           <span class="small-note muted">
             Rebuys disabled.
-          </span>
-        `;
-            }
-
-            let startingStackHtml = '';
-            if (currentStackSuggestion) {
-                const stack = currentStackSuggestion;
-                const rowsHtml = stack.colors
-                    .filter(c => c.perPlayerCount > 0)
-                    .map(c => {
-                        const totalUsed = c.perPlayerCount * structure.players;
-                        return `
-              <tr>
-                <td>${c.name}</td>
-                <td>${c.value}</td>
-                <td>${c.perPlayerCount}</td>
-                <td>${totalUsed}</td>
-              </tr>`;
-                    })
-                    .join('');
-
-                startingStackHtml = `
-          <div class="preview-section-title">Suggested Starting Stack (per player)</div>
-          <span class="small-note">
-            Approx. ${stack.chipsPerPlayer} chips per player, total value ~${stack.totalValuePerPlayer.toLocaleString()}.
-          </span>
-          <div class="scroll-box">
-            <table>
-              <thead>
-                <tr>
-                  <th>Color</th>
-                  <th>Value</th>
-                  <th>Chips / Player</th>
-                  <th>Total Used</th>
-                </tr>
-              </thead>
-              <tbody>${rowsHtml}</tbody>
-            </table>
-          </div>
-        `;
-            } else {
-                startingStackHtml = `
-          <div class="preview-section-title">Suggested Starting Stack (per player)</div>
-          <span class="small-note muted">
-            Define chip colors, values, and counts to see a suggested stack.
           </span>
         `;
             }
@@ -974,7 +1013,7 @@
             return `${hStr}:${mStr}`;
         }
 
-        // --- PDF generation ---
+        // --- PDF generation with beginner-friendly hand guide ---
         function generatePdf(structure) {
             if (!window.jspdf || !window.jspdf.jsPDF) {
                 alert('PDF engine (jsPDF) did not load. Check your connection and try again.');
@@ -1003,29 +1042,69 @@
             doc.text('Home Poker Tournament Guide', 105, y, { align: 'center' });
             y += 8;
             doc.setFontSize(11);
-            doc.text(`Players: ${players}   Runtime: ${runtimeHours.toFixed(1).replace(/\.0$/, '')} hours`, 105, y, { align: 'center' });
+            doc.text(
+                `Players: ${players}   Runtime: ${runtimeHours.toFixed(1).replace(/\.0$/, '')} hours`,
+                105,
+                y,
+                { align: 'center' }
+            );
             y += 6;
 
-            // Hand ranking quick guide
+            // Beginner-friendly hand ranking guide
             doc.setFontSize(13);
             doc.text('Hand Rankings (Strongest to Weakest)', 10, y);
             y += 5;
             doc.setFontSize(9);
-            const hands = [
-                'Royal Flush',
-                'Straight Flush',
-                'Four of a Kind',
-                'Full House',
-                'Flush',
-                'Straight',
-                'Three of a Kind',
-                'Two Pair',
-                'One Pair',
-                'High Card'
+
+            const handDescriptions = [
+                {
+                    title: 'Royal Flush',
+                    desc: 'A, K, Q, J, 10 all of the same suit (e.g., A♠ K♠ Q♠ J♠ 10♠).'
+                },
+                {
+                    title: 'Straight Flush',
+                    desc: 'Five cards in number order and the same suit (not a Royal Flush).'
+                },
+                {
+                    title: 'Four of a Kind',
+                    desc: 'Four cards of the same rank (e.g., 9♣ 9♦ 9♥ 9♠).'
+                },
+                {
+                    title: 'Full House',
+                    desc: 'Three cards of one rank and two cards of another rank (e.g., 7 7 7 2 2).'
+                },
+                {
+                    title: 'Flush',
+                    desc: 'Five cards of the same suit, not in number order.'
+                },
+                {
+                    title: 'Straight',
+                    desc: 'Five cards in number order, any suits (e.g., 5♣ 6♦ 7♠ 8♣ 9♥).'
+                },
+                {
+                    title: 'Three of a Kind',
+                    desc: 'Three cards of the same rank plus two other unmatched cards.'
+                },
+                {
+                    title: 'Two Pair',
+                    desc: 'Two cards of one rank and two cards of another rank (e.g., J J 4 4 X).'
+                },
+                {
+                    title: 'One Pair',
+                    desc: 'Two cards of the same rank plus three other unmatched cards.'
+                },
+                {
+                    title: 'High Card',
+                    desc: 'No made hand; the highest card in your hand determines the winner.'
+                }
             ];
-            hands.forEach(h => {
-                doc.text('- ' + h, 12, y);
-                y += 4;
+
+            const maxWidth = 180; // mm
+            handDescriptions.forEach(item => {
+                const line = item.title + ': ' + item.desc;
+                const wrapped = doc.splitTextToSize(line, maxWidth);
+                doc.text(wrapped, 12, y);
+                y += wrapped.length * 4;
             });
 
             y += 3;
@@ -1062,8 +1141,7 @@
                 doc.text('Suggested Starting Stack (per player)', 10, y);
                 y += 2;
 
-                const autoTable = doc.autoTable;
-                if (autoTable) {
+                if (doc.autoTable) {
                     doc.autoTable({
                         startY: y,
                         head: [['Color', 'Value', 'Chips / Player', 'Total Used']],
@@ -1094,7 +1172,7 @@
                     body: schedule.map(l => [
                         String(l.level),
                         formatMinutes(l.startMin),
-                        formatMinutes(l.endMin),
+                        String(l.endMin > 0 ? formatMinutes(l.endMin) : ''),
                         String(l.sb),
                         String(l.bb)
                     ]),
@@ -1103,8 +1181,8 @@
                 });
             }
 
-            // For mobile (iOS etc.): open PDF in new tab/window instead of trying file download
             try {
+                // Open PDF in a new tab/window (more reliable on iOS)
                 doc.output('dataurlnewwindow');
             } catch (e) {
                 alert('Error generating PDF: ' + (e && e.message ? e.message : e));
