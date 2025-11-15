@@ -907,6 +907,76 @@
             };
         }
 
+        function buildDisplaySchedule(structure) {
+            const baseSchedule = structure.schedule || [];
+            const breaks = structure.breaks || [];
+            const allowRebuys = structure.allowRebuys;
+            const rebuyCutoffHours = structure.rebuyCutoffHours;
+
+            // Start with just the levels
+            const rows = baseSchedule.map(l => ({
+                type: 'level',
+                level: l.level,
+                startMin: l.startMin,
+                endMin: l.endMin,
+                sb: l.sb,
+                bb: l.bb,
+                note: ''
+            }));
+
+            // Attach breaks: place each break after the level whose midpoint
+            // is closest to the requested break time.
+            breaks.forEach(b => {
+                const targetMinutes = b.atHour * 60;
+                let closestIndex = 0;
+                let bestDiff = Infinity;
+
+                rows.forEach((r, idx) => {
+                    if (r.type !== 'level') return;
+                    const mid = (r.startMin + r.endMin) / 2;
+                    const diff = Math.abs(mid - targetMinutes);
+                    if (diff < bestDiff) {
+                        bestDiff = diff;
+                        closestIndex = idx;
+                    }
+                });
+
+                // Insert a break row after that level
+                rows.splice(closestIndex + 1, 0, {
+                    type: 'break',
+                    level: null,
+                    startMin: null,
+                    endMin: null,
+                    sb: null,
+                    bb: null,
+                    note: `Break (${b.minutes} min)`
+                });
+            });
+
+            // Attach rebuy cutoff note on the level whose midpoint is
+            // closest to the rebuy cutoff hour.
+            if (allowRebuys && rebuyCutoffHours) {
+                const cutoffMinutes = rebuyCutoffHours * 60;
+                let cutoffIdx = 0;
+                let bestDiff = Infinity;
+
+                rows.forEach((r, idx) => {
+                    if (r.type !== 'level') return;
+                    const mid = (r.startMin + r.endMin) / 2;
+                    const diff = Math.abs(mid - cutoffMinutes);
+                    if (diff < bestDiff) {
+                        bestDiff = diff;
+                        cutoffIdx = idx;
+                    }
+                });
+
+                const r = rows[cutoffIdx];
+                r.note += (r.note ? ' ' : '') + 'Rebuys end after this level.';
+            }
+
+            return rows;
+        }
+
         // --- Preview rendering ---
         function renderPreview(structure) {
             const container = document.getElementById('previewContent');
@@ -1034,33 +1104,54 @@
         `;
             }
 
-            const scheduleRows = schedule.map(l => `
-        <tr>
-          <td>${l.level}</td>
-          <td>${formatMinutes(l.startMin)}</td>
-          <td>${formatMinutes(l.endMin)}</td>
-          <td>${l.sb}</td>
-          <td>${l.bb}</td>
-        </tr>
-      `).join('');
+            const displayRows = buildDisplaySchedule(structure);
+
+            const scheduleRows = displayRows.map(r => {
+                if (r.type === 'level') {
+                    return `
+                  <tr>
+                    <td>${r.level}</td>
+                    <td>${formatMinutes(r.startMin)}</td>
+                    <td>${formatMinutes(r.endMin)}</td>
+                    <td>${r.sb}</td>
+                    <td>${r.bb}</td>
+                    <td>${r.note || ''}</td>
+                  </tr>
+                `;
+                } else {
+                    // break row
+                    return `
+                  <tr>
+                    <td>—</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td>${r.note || 'Break'}</td>
+                  </tr>
+                `;
+                }
+            }).join('');
 
             const scheduleHtml = `
-        <div class="preview-section-title">Blind Schedule</div>
-        <div class="scroll-box">
-          <table>
-            <thead>
-              <tr>
-                <th>Lvl</th>
-                <th>Start</th>
-                <th>End</th>
-                <th>SB</th>
-                <th>BB</th>
-              </tr>
-            </thead>
-            <tbody>${scheduleRows}</tbody>
-          </table>
-        </div>
-      `;
+              <div class="preview-section-title">Blind Schedule</div>
+              <div class="scroll-box">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Lvl</th>
+                      <th>Start</th>
+                      <th>End</th>
+                      <th>SB</th>
+                      <th>BB</th>
+                      <th>Note</th>
+                    </tr>
+                  </thead>
+                  <tbody>${scheduleRows}</tbody>
+                </table>
+              </div>
+            `;
+
 
             container.innerHTML = `
         ${metaHtml}
@@ -1226,26 +1317,36 @@
                 }
             }
 
-            // Blind schedule table
             doc.setFontSize(12);
             doc.text('Blind Schedule', 10, y);
             y += 2;
 
             if (doc.autoTable) {
+                const displayRows = buildDisplaySchedule(structure);
+
                 doc.autoTable({
                     startY: y,
-                    head: [['Lvl', 'Start', 'End', 'SB', 'BB']],
-                    body: schedule.map(l => [
-                        String(l.level),
-                        formatMinutes(l.startMin),
-                        String(l.endMin > 0 ? formatMinutes(l.endMin) : ''),
-                        String(l.sb),
-                        String(l.bb)
-                    ]),
+                    head: [['Lvl', 'Start', 'End', 'SB', 'BB', 'Note']],
+                    body: displayRows.map(r => {
+                        if (r.type === 'level') {
+                            return [
+                                String(r.level),
+                                formatMinutes(r.startMin),
+                                formatMinutes(r.endMin),
+                                String(r.sb),
+                                String(r.bb),
+                                r.note || ''
+                            ];
+                        } else {
+                            // break row
+                            return ['—', '', '', '', '', r.note || 'Break'];
+                        }
+                    }),
                     styles: { fontSize: 9 },
                     headStyles: { fillColor: [15, 23, 42] }
                 });
             }
+
 
             try {
                 // Open PDF in a new tab/window (more reliable on iOS)
