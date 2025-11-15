@@ -606,7 +606,7 @@
             const basePatterns = {
                 1: [25],
                 2: [25, 100],
-                3: [25, 100, 500],
+                3: [25, 100],
                 4: [25, 100, 500, 1000],
                 5: [25, 100, 500, 1000, 5000]
             };
@@ -614,16 +614,35 @@
             const n = usedColors.length;
             if (n === 0) return {};
 
+            // Pick a base pattern of the right length
             const base = (basePatterns[n] || basePatterns[5].slice(0, n)).slice();
-            const multiplier = Math.pow(2, valueScaleStep);
+
+            // Map valueScaleStep to **integer-friendly** multipliers
+            // No weird decimals: always multiply, then round to nearest 5.
+            const scaleMultipliers = {
+                '-2': 0.25,
+                '-1': 0.5,
+                '0': 1,
+                '1': 2,
+                '2': 4,
+                '3': 8
+            };
+            const multiplier = scaleMultipliers[String(valueScaleStep)] ?? 1;
 
             const map = {};
             for (let i = 0; i < n; i++) {
-                map[usedColors[i].name] = base[i] * multiplier;
+                const colorName = usedColors[i].name;
+                const raw = base[i] * multiplier;
+
+                // ✅ round to nearest 5, never < 5, and always an integer
+                let rounded = Math.round(raw / 5) * 5;
+                if (rounded < 5) rounded = 5;
+
+                map[colorName] = rounded;
             }
             return map;
         }
-
+        
         // --- Chip usage + suggested starting stack ---
         function recalcChipUsageAndStacks() {
             const playersInput = document.getElementById('players');
