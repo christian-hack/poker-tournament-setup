@@ -367,7 +367,7 @@
                     <h2>Chip Setup</h2>
                     <div class="form-grid">
                         <div class="form-row">
-                            <label for="chipColorsCount">Number of chip colors in use</label>
+                            <label for="chipColorsCount">Number of chip colors:</label>
                             <input id="chipColorsCount" type="number" min="1" max="5" value="4" />
                             <span class="helper">
                                 Choose from White, Red, Green, Blue, Black. The app assumes the usual value order.
@@ -443,6 +443,10 @@
         function clamp(v, min, max) {
             if (isNaN(v)) return min;
             return Math.max(min, Math.min(max, v));
+        }
+        function roundToUnit(value, unit) {
+            if (!unit || unit <= 0) return Math.round(value);
+            return Math.max(unit, Math.round(value / unit) * unit);
         }
 
         const COLOR_OPTIONS = ['White', 'Red', 'Green', 'Blue', 'Black'];
@@ -842,15 +846,21 @@
                 const levelStartMin = elapsed;
                 const levelEndMin = elapsed + levelMinutes;
 
+                // ✅ snap blinds to multiples of the smallest chip
+                const sbInt = roundToUnit(blindSB, minChip);
+                const bbInt = roundToUnit(blindBB, minChip);
+
                 schedule.push({
                     level,
                     startMin: levelStartMin,
                     endMin: levelEndMin,
-                    sb: Math.round(blindSB),
-                    bb: Math.round(blindBB)
+                    sb: sbInt,
+                    bb: bbInt
                 });
 
                 elapsed += levelMinutes;
+
+                // grow the "raw" blinds; next loop will snap again
                 blindSB *= 1.5;
                 blindBB = blindSB * 2;
             }
