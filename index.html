@@ -39,6 +39,14 @@
             box-sizing: border-box;
         }
 
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1.1;
+            min-width: 0;
+        }
+
         .app-shell {
             background: rgba(15, 23, 42, 0.96);
             border-radius: 16px;
@@ -307,110 +315,115 @@
         </header>
 
         <div class="layout">
-            <!-- LEFT COLUMN: main setup -->
-            <section class="card form-card">
-                <h2>Setup</h2>
-                <div class="form-grid">
-                    <div class="form-row">
-                        <label for="players">Number of players</label>
-                        <input id="players" type="number" min="3" max="8" value="6" />
-                        <span class="helper">Designed for 3–8 players using your chip set.</span>
-                    </div>
-
-                    <div class="form-row">
-                        <label for="runtimeHours">Desired runtime (hours)</label>
-                        <input id="runtimeHours" type="number" step="0.5" min="1.5" max="8" value="4" />
-                        <span class="helper">Total time including breaks.</span>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="checkbox-row">
-                            <input id="useBreaks" type="checkbox" />
-                            <label for="useBreaks">Schedule breaks?</label>
+            <!-- LEFT SIDE: wrapper containing Setup + Chip Setup -->
+            <div class="left-column">
+                <!-- Setup card (players / runtime / breaks / rebuys + button) -->
+                <section class="card form-card">
+                    <h2>Setup</h2>
+                    <div class="form-grid">
+                        <div class="form-row">
+                            <label for="players">Number of players</label>
+                            <input id="players" type="number" min="3" max="8" value="6" />
+                            <span class="helper">Designed for 3–8 players using your chip set.</span>
                         </div>
-                        <div id="breaksConfig" class="breaks-config" style="display:none;">
-                            <div class="form-row" style="margin-top:2px;">
-                                <label for="breakMinutes">Break length</label>
-                                <div class="inline-row">
-                                    <input id="breakMinutes" type="number" min="3" max="30" value="5"
-                                        style="width:80px;" />
-                                    <span>minutes</span>
+
+                        <div class="form-row">
+                            <label for="runtimeHours">Desired runtime (hours)</label>
+                            <input id="runtimeHours" type="number" step="0.5" min="1.5" max="8" value="4" />
+                            <span class="helper">Total time including breaks.</span>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="checkbox-row">
+                                <input id="useBreaks" type="checkbox" />
+                                <label for="useBreaks">Schedule breaks?</label>
+                            </div>
+                            <div id="breaksConfig" class="breaks-config" style="display:none;">
+                                <div class="form-row" style="margin-top:2px;">
+                                    <label for="breakMinutes">Break length</label>
+                                    <div class="inline-row">
+                                        <input id="breakMinutes" type="number" min="3" max="30" value="5"
+                                            style="width:80px;" />
+                                        <span>minutes</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-row" style="margin-top:4px;">
+                                    <label for="breakFrequencyHours">Time between breaks</label>
+                                    <div class="inline-row">
+                                        <input id="breakFrequencyHours" type="number" step="0.5" min="0.5" max="4"
+                                            value="1.5" style="width:80px;" />
+                                        <span>hours</span>
+                                    </div>
+                                    <span class="helper">
+                                        Breaks are placed at the nearest level boundary to each interval.
+                                    </span>
                                 </div>
                             </div>
+                        </div>
 
-                            <div class="form-row" style="margin-top:4px;">
-                                <label for="breakFrequencyHours">Time between breaks</label>
+                        <div class="form-row">
+                            <div class="checkbox-row">
+                                <input id="allowRebuys" type="checkbox" />
+                                <label for="allowRebuys">Allow rebuys?</label>
+                            </div>
+                            <div id="rebuysConfig" class="rebuys-config" style="display:none;">
                                 <div class="inline-row">
-                                    <input id="breakFrequencyHours" type="number" step="0.5" min="0.5" max="4"
-                                        value="1.5" style="width:80px;" />
-                                    <span>hours</span>
+                                    <span>Rebuys allowed until</span>
+                                    <input id="rebuyCutoffHours" type="number" step="0.5" min="0.5" max="6" value="2"
+                                        style="width:70px;" />
+                                    <span>hours after start.</span>
                                 </div>
-                                <span class="helper">Breaks are placed at the nearest level boundary to each
-                                    interval.</span>
+                                <span class="helper">
+                                    Rebuy stack = starting stack. Chip capacity isn’t auto-enforced yet.
+                                </span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="form-row">
-                        <div class="checkbox-row">
-                            <input id="allowRebuys" type="checkbox" />
-                            <label for="allowRebuys">Allow rebuys?</label>
-                        </div>
-                        <div id="rebuysConfig" class="rebuys-config" style="display:none;">
-                            <div class="inline-row">
-                                <span>Rebuys allowed until</span>
-                                <input id="rebuyCutoffHours" type="number" step="0.5" min="0.5" max="6" value="2"
-                                    style="width:70px;" />
-                                <span>hours after start.</span>
-                            </div>
-                            <span class="helper">Rebuy stack = starting stack. Chip capacity isn’t auto-enforced
-                                yet.</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="btn-row">
-                    <button id="generateBtn" type="button">
-                        <span>Generate PDF Guide</span>
-                    </button>
-                    <span class="small-note">
-                        PDF includes hand rankings, chip breakdown, blind schedule, breaks, and rebuy rules.
-                    </span>
-                </div>
-                <div id="errorBox" class="error" style="display:none;"></div>
-            </section>
-
-            <!-- LEFT COLUMN: chip setup (second card) -->
-            <section class="card" style="margin-top: 10px;">
-                <h2>Chip Setup</h2>
-                <div class="form-grid">
-                    <div class="form-row">
-                        <label for="chipColorsCount">Number of chip colors in use</label>
-                        <input id="chipColorsCount" type="number" min="1" max="8" value="4" />
-                        <span class="helper">
-                            Each color usually maps to a denomination (e.g., T25, T100, T500, T1000).
+                    <div class="btn-row">
+                        <button id="generateBtn" type="button">
+                            <span>Generate PDF Guide</span>
+                        </button>
+                        <span class="small-note">
+                            PDF includes hand rankings, chip breakdown, blind schedule, breaks, and rebuy rules.
                         </span>
                     </div>
+                    <div id="errorBox" class="error" style="display:none;"></div>
+                </section>
 
-                    <div class="form-row">
-                        <label for="chipsInPlay">Chips to use in tournament</label>
-                        <input id="chipsInPlay" type="number" min="0" value="300" />
-                        <span class="helper" id="chipsInPlayHelper">
-                            Will be constrained based on your chip counts and number of players.
-                        </span>
+                <!-- Chip Setup card (still on the left, stacked under Setup) -->
+                <section class="card" style="margin-top: 4px;">
+                    <h2>Chip Setup</h2>
+                    <div class="form-grid">
+                        <div class="form-row">
+                            <label for="chipColorsCount">Number of chip colors in use</label>
+                            <input id="chipColorsCount" type="number" min="1" max="8" value="4" />
+                            <span class="helper">
+                                Each color usually maps to a denomination (e.g., T25, T100, T500, T1000).
+                            </span>
+                        </div>
+
+                        <div class="form-row">
+                            <label for="chipsInPlay">Chips to use in tournament</label>
+                            <input id="chipsInPlay" type="number" min="0" value="300" />
+                            <span class="helper" id="chipsInPlayHelper">
+                                Will be constrained based on your chip counts and number of players.
+                            </span>
+                        </div>
                     </div>
-                </div>
 
-                <div id="chipColorsContainer" style="margin-top: 10px;">
-                    <!-- Dynamic rows will be injected here by JS -->
-                </div>
+                    <div id="chipColorsContainer" style="margin-top: 10px;">
+                        <!-- Dynamic rows injected by JS -->
+                    </div>
 
-                <div class="small-note" id="chipSummaryNote" style="margin-top: 6px;">
-                    Enter your chip counts above to see totals and recommended chips in play.
-                </div>
-            </section>
+                    <div class="small-note" id="chipSummaryNote" style="margin-top: 6px;">
+                        Enter your chip counts above to see totals and recommended chips in play.
+                    </div>
+                </section>
+            </div>
 
-            <!-- RIGHT COLUMN: live preview -->
+            <!-- RIGHT SIDE: live preview stays as-is -->
             <section class="card preview-card">
                 <div class="preview-header">
                     <h2>Live Preview</h2>
@@ -420,7 +433,9 @@
                 </div>
 
                 <div id="previewContent">
-                    <p class="small-note muted">Adjust the settings on the left to see the preview.</p>
+                    <p class="small-note muted">
+                        Adjust the settings on the left to see the preview.
+                    </p>
                 </div>
             </section>
         </div>
@@ -1041,7 +1056,10 @@
         });
 
         // Initial preview
-        window.addEventListener('load', recalcPreview);
+        window.addEventListener('load', () => {
+          initChipColorsUI();  // builds the dynamic color rows
+          recalcPreview();     // builds the initial preview
+        });
     </script>
 </body>
 
