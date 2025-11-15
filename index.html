@@ -675,6 +675,7 @@
             // Values follow the color order: White < Red < Green < Blue < Black
             const valueMap = computeColorValues(usedColors);
 
+            // How aggressively we use the total chip pool
             const modeRadio = document.querySelector('input[name="stackUsageMode"]:checked');
             const mode = modeRadio ? modeRadio.value : 'half';
             const usageFractions = { some: 0.25, half: 0.5, most: 0.75, max: 0.9 };
@@ -705,7 +706,7 @@
                 return;
             }
 
-            // Sort used colors by their implied value order (White..Black)
+            // Build per-color structure sorted by "smallest to largest" (White..Black)
             const perPlayer = usedColors
                 .map(c => ({
                     name: c.name,
@@ -718,16 +719,27 @@
                 .sort((a, b) => a.rank - b.rank);
 
             const N = perPlayer.length;
-            const baseTarget = Math.floor(chipsPerPlayer / N);
-            let assignedTotal = 0;
 
+            // 🎯 Weight lower denominations more heavily
+            // For up to 5 colors, use weights ≈ [6, 4, 2, 1, 1].
+            const baseWeightsAll = [6, 4, 2, 1, 1];
+            const weights = perPlayer.map((c, idx) => baseWeightsAll[idx] ?? 1);
+            const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+
+            // First pass: target chips per color based on weights,
+            // but cap by inventory (maxPerPlayer).
+            let assignedTotal = 0;
             for (let i = 0; i < N; i++) {
+                const w = weights[i];
+                const ideal = Math.floor((chipsPerPlayer * w) / totalWeight);
                 const cap = perPlayer[i].maxPerPlayer;
-                const given = Math.min(baseTarget, cap);
+                const given = Math.min(ideal, cap);
                 perPlayer[i].perPlayerCount = given;
                 assignedTotal += given;
             }
 
+            // Second pass: distribute leftover chips, starting from the smallest value up,
+            // still respecting inventory caps.
             let leftover = chipsPerPlayer - assignedTotal;
             while (leftover > 0) {
                 let addedThisLoop = 0;
@@ -738,7 +750,7 @@
                         addedThisLoop += 1;
                     }
                 }
-                if (addedThisLoop === 0) break;
+                if (addedThisLoop === 0) break; // inventory exhausted
             }
 
             const totalValuePerPlayer = perPlayer.reduce(
