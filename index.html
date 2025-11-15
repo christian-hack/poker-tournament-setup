@@ -780,7 +780,6 @@
             };
         }
 
-        // --- Tournament structure calculation ---
         function calculateStructure() {
             const errorBox = document.getElementById('errorBox');
             errorBox.style.display = 'none';
@@ -798,6 +797,7 @@
             const useBreaks = document.getElementById('useBreaks').checked;
             const allowRebuys = document.getElementById('allowRebuys').checked;
 
+            // --- Breaks & effective play time ---
             let breakMinutes = 0;
             let breakFrequencyHours = 0;
             let breaks = [];
@@ -818,53 +818,70 @@
             let effectiveMinutes = runtimeHours * 60 - totalBreakMinutes;
             if (effectiveMinutes < 60) effectiveMinutes = 60;
 
+            // --- Level length & count ---
             const levelMinutes = 12;
             let levelsCount = Math.floor(effectiveMinutes / levelMinutes);
-            if (levelsCount < 6) levelsCount = 6;
+            if (levelsCount < 4) levelsCount = 4; // at least a few levels
 
+            // --- Starting stack value (per player) ---
             let startingStackValue = 8000;
             if (currentStackSuggestion && currentStackSuggestion.totalValuePerPlayer > 0) {
                 startingStackValue = currentStackSuggestion.totalValuePerPlayer;
             }
 
-            // For blinds, base on the smallest chip value in use
+            // --- Smallest chip value (for unit multiples) ---
             let chipValues = [];
             if (currentStackSuggestion && currentStackSuggestion.colors.length) {
                 chipValues = currentStackSuggestion.colors.map(c => c.value);
             } else {
-                chipValues = [25, 100, 500, 1000]; // fallback
+                chipValues = [25, 100, 500, 1000]; // generic fallback
             }
             const minChip = chipValues.length ? Math.min(...chipValues) : 25;
 
-            const baseSB = minChip;
+            // --- Option C: dynamic exponential blind curve ---
+            // Start big blind at 2× smallest chip
+            let startBBRaw = minChip * 2;
+
+            // Aim for average stack ≈ 12 BB by final level
+            const targetAvgBBAtEnd = 12;
+            let endBBRaw = startingStackValue / targetAvgBBAtEnd;
+
+            // Make sure we actually grow (in case stack is tiny)
+            if (endBBRaw < startBBRaw * 2) {
+                endBBRaw = startBBRaw * 2;
+            }
+
+            let growthFactor = 1;
+            if (levelsCount > 1) {
+                growthFactor = Math.pow(endBBRaw / startBBRaw, 1 / (levelsCount - 1));
+            }
+
             const schedule = [];
             let elapsed = 0;
-            let blindSB = baseSB;
-            let blindBB = blindSB * 2;
 
-            for (let level = 1; level <= levelsCount; level++) {
+            for (let i = 0; i < levelsCount; i++) {
+                const level = i + 1;
                 const levelStartMin = elapsed;
                 const levelEndMin = elapsed + levelMinutes;
 
-                // ✅ snap blinds to multiples of the smallest chip
-                const sbInt = roundToUnit(blindSB, minChip);
-                const bbInt = roundToUnit(blindBB, minChip);
+                // Raw BB for this level, then snap to chip units
+                const bbRaw = startBBRaw * Math.pow(growthFactor, i);
+                let bb = roundToUnit(bbRaw, minChip);
+                let sb = roundToUnit(bb / 2, minChip);
+                if (sb < minChip) sb = minChip;
 
                 schedule.push({
                     level,
                     startMin: levelStartMin,
                     endMin: levelEndMin,
-                    sb: sbInt,
-                    bb: bbInt
+                    sb,
+                    bb
                 });
 
                 elapsed += levelMinutes;
-
-                // grow the "raw" blinds; next loop will snap again
-                blindSB *= 1.5;
-                blindBB = blindSB * 2;
             }
 
+            // --- Rebuy cutoff ---
             let rebuyCutoffHours = null;
             if (allowRebuys) {
                 rebuyCutoffHours = Math.min(
