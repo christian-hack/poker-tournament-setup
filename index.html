@@ -405,12 +405,18 @@
                         </div>
 
                         <div class="form-row">
-                            <label for="chipsInPlay">Chips to use in tournament</label>
-                            <input id="chipsInPlay" type="number" min="0" value="300" />
-                            <span class="helper" id="chipsInPlayHelper">
-                                Will be constrained based on your chip counts and number of players.
-                            </span>
+                          <label>How many chips should starting stacks use?</label>
+                          <div class="inline-row" style="flex-wrap: wrap; gap: 6px;">
+                            <label><input type="radio" name="stackUsageMode" value="some" checked /> Some</label>
+                            <label><input type="radio" name="stackUsageMode" value="half" /> About half</label>
+                            <label><input type="radio" name="stackUsageMode" value="most" /> Most</label>
+                            <label><input type="radio" name="stackUsageMode" value="max" /> As many as possible</label>
+                          </div>
+                          <span class="helper" id="stackUsageHelper">
+                            We'll pick a starting stack size based on your total chip count and number of players.
+                          </span>
                         </div>
+
                     </div>
 
                     <div id="chipColorsContainer" style="margin-top: 10px;">
