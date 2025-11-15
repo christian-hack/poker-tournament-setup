@@ -2,11 +2,6 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <title>Home Poker Tournament Planner</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-QQ737235G7"></script>
     <script>
@@ -16,10 +11,13 @@
 
       gtag('config', 'G-QQ737235G7');
     </script>
-
     <!-- jsPDF & jsPDF-AutoTable from CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
+
+    <meta charset="UTF-8" />
+    <title>Home Poker Tournament Planner</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 
     <style>
@@ -974,7 +972,7 @@
         document.getElementById('generateBtn').addEventListener('click', () => {
           const structure = calculateStructure();
           if (!structure) return;
-                
+
           // Track usage in Google Analytics if gtag is available
           if (typeof gtag === 'function') {
             gtag('event', 'generate_pdf', {
