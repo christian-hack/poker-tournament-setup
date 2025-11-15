@@ -5,11 +5,11 @@
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-QQ737235G7"></script>
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
 
-      gtag('config', 'G-QQ737235G7');
+        gtag('config', 'G-QQ737235G7');
     </script>
     <!-- jsPDF & jsPDF-AutoTable from CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -307,14 +307,14 @@
         </header>
 
         <div class="layout">
-            <!-- Form side -->
+            <!-- LEFT COLUMN: main setup -->
             <section class="card form-card">
                 <h2>Setup</h2>
                 <div class="form-grid">
                     <div class="form-row">
                         <label for="players">Number of players</label>
                         <input id="players" type="number" min="3" max="8" value="6" />
-                        <span class="helper">Designed for 3–8 players using a 300-chip set.</span>
+                        <span class="helper">Designed for 3–8 players using your chip set.</span>
                     </div>
 
                     <div class="form-row">
@@ -345,7 +345,7 @@
                                         value="1.5" style="width:80px;" />
                                     <span>hours</span>
                                 </div>
-                                <span class="helper">Breaks are placed at the closest level boundary to each
+                                <span class="helper">Breaks are placed at the nearest level boundary to each
                                     interval.</span>
                             </div>
                         </div>
@@ -363,7 +363,8 @@
                                     style="width:70px;" />
                                 <span>hours after start.</span>
                             </div>
-                            <span class="helper">Chip case capacity is not automatically enforced for rebuys.</span>
+                            <span class="helper">Rebuy stack = starting stack. Chip capacity isn’t auto-enforced
+                                yet.</span>
                         </div>
                     </div>
                 </div>
@@ -379,7 +380,37 @@
                 <div id="errorBox" class="error" style="display:none;"></div>
             </section>
 
-            <!-- Preview side -->
+            <!-- LEFT COLUMN: chip setup (second card) -->
+            <section class="card" style="margin-top: 10px;">
+                <h2>Chip Setup</h2>
+                <div class="form-grid">
+                    <div class="form-row">
+                        <label for="chipColorsCount">Number of chip colors in use</label>
+                        <input id="chipColorsCount" type="number" min="1" max="8" value="4" />
+                        <span class="helper">
+                            Each color usually maps to a denomination (e.g., T25, T100, T500, T1000).
+                        </span>
+                    </div>
+
+                    <div class="form-row">
+                        <label for="chipsInPlay">Chips to use in tournament</label>
+                        <input id="chipsInPlay" type="number" min="0" value="300" />
+                        <span class="helper" id="chipsInPlayHelper">
+                            Will be constrained based on your chip counts and number of players.
+                        </span>
+                    </div>
+                </div>
+
+                <div id="chipColorsContainer" style="margin-top: 10px;">
+                    <!-- Dynamic rows will be injected here by JS -->
+                </div>
+
+                <div class="small-note" id="chipSummaryNote" style="margin-top: 6px;">
+                    Enter your chip counts above to see totals and recommended chips in play.
+                </div>
+            </section>
+
+            <!-- RIGHT COLUMN: live preview -->
             <section class="card preview-card">
                 <div class="preview-header">
                     <h2>Live Preview</h2>
@@ -941,26 +972,26 @@
             // Save / open file
             // Open PDF in a new tab/window instead of trying to "download" it
             try {
-              // This works well across desktop + iOS browsers
-              doc.output('dataurlnewwindow');
+                // This works well across desktop + iOS browsers
+                doc.output('dataurlnewwindow');
             } catch (e) {
-              // As a fallback, just alert the error so we know what's going on
-              alert('Error generating PDF: ' + (e && e.message ? e.message : e));
+                // As a fallback, just alert the error so we know what's going on
+                alert('Error generating PDF: ' + (e && e.message ? e.message : e));
             }
 
             // iOS browsers are bad at "downloads" triggered by JS.
             // Instead, open the PDF in a new tab so the user can share/save it.
             if (isIOS()) {
-              try {
-                const blobUrl = doc.output('bloburl');
-                window.open(blobUrl, '_blank');
-              } catch (e) {
-                // Fallback: data URL
-                doc.output('dataurlnewwindow');
-              }
+                try {
+                    const blobUrl = doc.output('bloburl');
+                    window.open(blobUrl, '_blank');
+                } catch (e) {
+                    // Fallback: data URL
+                    doc.output('dataurlnewwindow');
+                }
             } else {
-              // Desktop and non-iOS browsers: normal download
-              doc.save(filename);
+                // Desktop and non-iOS browsers: normal download
+                doc.save(filename);
             }
         }
 
@@ -993,20 +1024,20 @@
             });
 
         document.getElementById('generateBtn').addEventListener('click', () => {
-          const structure = calculateStructure();
-          if (!structure) return;
+            const structure = calculateStructure();
+            if (!structure) return;
 
-          // Track usage in Google Analytics if gtag is available
-          if (typeof gtag === 'function') {
-            gtag('event', 'generate_pdf', {
-              players: structure.players,
-              runtime_hours: structure.runtimeHours,
-              breaks_enabled: structure.useBreaks,
-              rebuys_enabled: structure.allowRebuys
-            });
-          }
-      
-          generatePdf(structure);
+            // Track usage in Google Analytics if gtag is available
+            if (typeof gtag === 'function') {
+                gtag('event', 'generate_pdf', {
+                    players: structure.players,
+                    runtime_hours: structure.runtimeHours,
+                    breaks_enabled: structure.useBreaks,
+                    rebuys_enabled: structure.allowRebuys
+                });
+            }
+
+            generatePdf(structure);
         });
 
         // Initial preview
