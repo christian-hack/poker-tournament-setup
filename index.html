@@ -360,16 +360,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <div class="btn-row">
-                        <button id="generateBtn" type="button">
-                            <span>Generate PDF Guide</span>
-                        </button>
-                        <span class="small-note">
-                            The PDF opens in a new tab so you can save or share it.
-                        </span>
-                    </div>
-                    <div id="errorBox" class="error" style="display:none;"></div>
                 </section>
 
                 <!-- Chip Setup card -->
@@ -416,6 +406,15 @@
                     <div class="small-note" id="chipSummaryNote" style="margin-top: 6px;">
                         Enter chip counts above to see a suggested starting stack per player.
                     </div>
+                    <div class="btn-row">
+                        <button id="generateBtn" type="button">
+                            <span>Generate PDF Guide</span>
+                        </button>
+                        <span class="small-note">
+                            The PDF opens in a new tab so you can save or share it.
+                        </span>
+                    </div>
+                    <div id="errorBox" class="error" style="display:none;"></div>
                 </section>
             </div>
 
@@ -1059,39 +1058,39 @@
             const handDescriptions = [
                 {
                     title: 'Royal Flush',
-                    desc: 'A, K, Q, J, 10 all of the same suit (e.g., A♠ K♠ Q♠ J♠ 10♠).'
+                    desc: 'The combination of ten, jack, queen, king, ace, all of the same suit.'
                 },
                 {
                     title: 'Straight Flush',
-                    desc: 'Five cards in number order and the same suit (not a Royal Flush).'
+                    desc: 'Five cards of the same suit in sequential order.'
                 },
                 {
                     title: 'Four of a Kind',
-                    desc: 'Four cards of the same rank (e.g., 9♣ 9♦ 9♥ 9♠).'
+                    desc: 'Any four numerically matching cards.'
                 },
                 {
                     title: 'Full House',
-                    desc: 'Three cards of one rank and two cards of another rank (e.g., 7 7 7 2 2).'
+                    desc: 'Combination of three of a kind and a pair in the same hand.'
                 },
                 {
                     title: 'Flush',
-                    desc: 'Five cards of the same suit, not in number order.'
+                    desc: 'Five cards of the same suit, in any order.'
                 },
                 {
                     title: 'Straight',
-                    desc: 'Five cards in number order, any suits (e.g., 5♣ 6♦ 7♠ 8♣ 9♥).'
+                    desc: 'Five cards of any suit, in sequential order.'
                 },
                 {
                     title: 'Three of a Kind',
-                    desc: 'Three cards of the same rank plus two other unmatched cards.'
+                    desc: 'Any three numerically matching cards.'
                 },
                 {
                     title: 'Two Pair',
-                    desc: 'Two cards of one rank and two cards of another rank (e.g., J J 4 4 X).'
+                    desc: 'Two different pairs in the same hand.'
                 },
                 {
                     title: 'One Pair',
-                    desc: 'Two cards of the same rank plus three other unmatched cards.'
+                    desc: 'Any two numerically matching cards.'
                 },
                 {
                     title: 'High Card',
