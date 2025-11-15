@@ -454,8 +454,17 @@
         window.addEventListener('load', () => {
             setupFormInteractions();
             initChipColorsUI();
+
+            // Force default states (iOS browsers like to restore old states)
+            document.getElementById('useBreaks').checked = false;
+            document.getElementById('allowRebuys').checked = false;
+
+            document.getElementById('breaksConfig').style.display = 'none';
+            document.getElementById('rebuysConfig').style.display = 'none';
+
             recalcAll();
         });
+
 
         function setupFormInteractions() {
             const useBreaks = document.getElementById('useBreaks');
@@ -642,7 +651,7 @@
             }
             return map;
         }
-        
+
         // --- Chip usage + suggested starting stack ---
         function recalcChipUsageAndStacks() {
             const playersInput = document.getElementById('players');
