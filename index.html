@@ -397,10 +397,6 @@
 
     <script>
         'use strict';
-        function isIOS() {
-          return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        }
-
 
         // --- Core constants for chips and blinds ---
 
@@ -440,7 +436,9 @@
         ];
 
         // --- Utility functions ---
-
+        function isIOS() {
+            return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        }
         function clamp(val, min, max) {
             return Math.min(Math.max(val, min), max);
         }
@@ -943,7 +941,7 @@
             // Save / open file
             const safeRuntime = String(runtimeHours).replace('.', 'p');
             const filename = `poker_tournament_${players}p_${safeRuntime}h.pdf`;
-                    
+
             // iOS browsers are bad at "downloads" triggered by JS.
             // Instead, open the PDF in a new tab so the user can share/save it.
             if (isIOS()) {
