@@ -20,63 +20,83 @@
 
     <style>
         :root {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            color: #e5e7eb;
-            background-color: #020617;
+            --bg-navy: #020617;
+            --bg-surface: #0b1220;
+            --bg-card: #020617;
+            --border-soft: rgba(148, 163, 184, 0.22);
+            --accent-green: #22c55e;
+            /* primary accent */
+            --accent-green-soft: #4ade80;
+            --text-main: #e5e7eb;
+            --text-muted: #9ca3af;
+            --text-soft: #6b7280;
+            --table-header-bg: #020617;
+            --table-row-alt: #020617;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
             margin: 0;
             padding: 0;
-            background: radial-gradient(circle at top, #1e293b 0, #020617 60%);
-            min-height: 100vh;
+            background:
+                radial-gradient(circle at top, #1e293b 0, #020617 60%);
+            color: var(--text-main);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+                "Segoe UI", sans-serif;
             display: flex;
-            align-items: flex-start;
             justify-content: center;
-            padding: 24px 12px;
-            box-sizing: border-box;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px 10px;
         }
 
         .app-shell {
-            background: rgba(15, 23, 42, 0.96);
-            border-radius: 16px;
-            max-width: 1040px;
+            background: radial-gradient(circle at top left, #020617 0, #020617 55%, #020617 100%);
+            border-radius: 18px;
+            max-width: 1120px;
             width: 100%;
             box-shadow:
-                0 18px 45px rgba(0, 0, 0, 0.7),
-                0 0 0 1px rgba(148, 163, 184, 0.15);
-            padding: 20px 20px 24px;
-            box-sizing: border-box;
+                0 22px 55px rgba(0, 0, 0, 0.75),
+                0 0 0 1px rgba(15, 23, 42, 0.9);
+            padding: 20px 18px 22px;
         }
 
         @media (min-width: 768px) {
             .app-shell {
-                padding: 24px 28px 28px;
+                padding: 22px 26px 26px;
             }
         }
 
+        header {
+            margin-bottom: 10px;
+        }
+
         h1 {
-            margin: 0 0 4px;
-            font-size: 1.6rem;
-            letter-spacing: 0.03em;
+            margin: 0;
+            font-size: 1.7rem;
+            letter-spacing: 0.05em;
         }
 
         .subtitle {
-            margin: 0 0 16px;
-            font-size: 0.9rem;
-            color: #9ca3af;
+            margin: 4px 0 0;
+            font-size: 0.88rem;
+            color: var(--text-muted);
         }
 
         .layout {
             display: flex;
             flex-direction: column;
-            gap: 18px;
+            gap: 14px;
         }
 
         @media (min-width: 900px) {
             .layout {
                 flex-direction: row;
                 align-items: flex-start;
+                gap: 16px;
             }
         }
 
@@ -84,23 +104,17 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            flex: 1.1;
+            flex: 1;
             min-width: 0;
         }
 
         .card {
-            background: rgba(15, 23, 42, 0.9);
+            background: linear-gradient(135deg,
+                    rgba(15, 23, 42, 0.95),
+                    rgba(15, 23, 42, 0.96));
             border-radius: 14px;
-            padding: 14px 14px 16px;
-            box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.18);
-            box-sizing: border-box;
-        }
-
-        .card h2 {
-            margin: 0 0 10px;
-            font-size: 1.05rem;
-            letter-spacing: 0.02em;
-            color: #e5e7eb;
+            padding: 12px 14px 14px;
+            box-shadow: inset 0 0 0 1px var(--border-soft);
         }
 
         .form-card {
@@ -108,14 +122,20 @@
         }
 
         .preview-card {
-            flex: 1.2;
+            flex: 1.05;
             min-width: 0;
+        }
+
+        .card h2 {
+            margin: 0 0 6px;
+            font-size: 1rem;
+            letter-spacing: 0.04em;
         }
 
         .form-grid {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 8px 12px;
+            gap: 6px 12px;
         }
 
         @media (min-width: 640px) {
@@ -127,36 +147,36 @@
         .form-row {
             display: flex;
             flex-direction: column;
-            gap: 4px;
-            font-size: 0.85rem;
+            gap: 3px;
+            font-size: 0.84rem;
         }
 
         .form-row span.helper {
-            font-size: 0.75rem;
-            color: #9ca3af;
+            font-size: 0.74rem;
+            color: var(--text-soft);
         }
 
         label {
-            font-size: 0.83rem;
-            color: #e5e7eb;
+            font-size: 0.82rem;
         }
 
         input[type="number"],
+        input[type="text"],
         select {
             border-radius: 9px;
             border: 1px solid #4b5563;
             background: #020617;
-            padding: 7px 9px;
-            color: #e5e7eb;
+            padding: 6px 9px;
+            color: var(--text-main);
             font-size: 0.9rem;
-            box-sizing: border-box;
         }
 
         input[type="number"]:focus,
+        input[type="text"]:focus,
         select:focus {
-            outline: 2px solid #22c55e;
+            outline: 2px solid var(--accent-green);
             outline-offset: 1px;
-            border-color: #22c55e;
+            border-color: var(--accent-green);
         }
 
         .inline-row {
@@ -176,9 +196,9 @@
         }
 
         input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
-            accent-color: #22c55e;
+            width: 15px;
+            height: 15px;
+            accent-color: var(--accent-green);
         }
 
         .breaks-config,
@@ -186,8 +206,8 @@
             margin-top: 4px;
             padding: 6px 8px;
             border-radius: 10px;
-            background: rgba(15, 23, 42, 0.9);
-            border: 1px dashed rgba(148, 163, 184, 0.6);
+            background: rgba(15, 23, 42, 0.98);
+            border: 1px dashed rgba(148, 163, 184, 0.7);
             font-size: 0.8rem;
         }
 
@@ -202,34 +222,38 @@
         button {
             border-radius: 999px;
             border: none;
-            padding: 9px 16px;
+            padding: 8px 16px;
             font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
-            background: linear-gradient(to right, #22c55e, #4ade80);
+            background: linear-gradient(135deg,
+                    var(--accent-green),
+                    var(--accent-green-soft));
             color: #022c22;
-            box-shadow: 0 10px 25px rgba(34, 197, 94, 0.45);
+            box-shadow: 0 10px 26px rgba(34, 197, 94, 0.5);
             display: inline-flex;
             align-items: center;
             gap: 6px;
+            transition: transform 0.08s ease, box-shadow 0.08s ease,
+                filter 0.08s ease;
         }
 
         button:hover {
-            filter: brightness(1.03);
+            filter: brightness(1.04);
         }
 
         button:active {
             transform: translateY(1px);
-            box-shadow: 0 6px 15px rgba(34, 197, 94, 0.4);
+            box-shadow: 0 6px 18px rgba(34, 197, 94, 0.4);
         }
 
         .small-note {
-            font-size: 0.75rem;
-            color: #9ca3af;
+            font-size: 0.74rem;
+            color: var(--text-soft);
         }
 
         .small-note.muted {
-            color: #6b7280;
+            color: var(--text-muted);
         }
 
         .error {
@@ -241,49 +265,48 @@
         .preview-header {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 2px;
             margin-bottom: 6px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.78rem;
-            margin-top: 4px;
-        }
-
-        th,
-        td {
-            padding: 4px 6px;
-            border-bottom: 1px solid rgba(55, 65, 81, 0.8);
-            text-align: left;
-            white-space: nowrap;
-        }
-
-        th {
-            font-weight: 600;
-            color: #e5e7eb;
-            background: rgba(15, 23, 42, 0.8);
-            position: sticky;
-            top: 0;
-            z-index: 1;
         }
 
         .preview-section-title {
             font-size: 0.9rem;
             font-weight: 600;
             margin-top: 6px;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.78rem;
+            margin-top: 2px;
+        }
+
+        th,
+        td {
+            padding: 4px 6px;
+            border-bottom: 1px solid rgba(31, 41, 55, 0.85);
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        th {
+            font-weight: 600;
+            color: var(--text-main);
+            background: #020617;
+            position: sticky;
+            top: 0;
+            z-index: 1;
         }
 
         .scroll-box {
-            max-height: 220px;
+            max-height: 210px;
             overflow: auto;
             border-radius: 10px;
-            border: 1px solid rgba(55, 65, 81, 0.9);
-            background: rgba(15, 23, 42, 0.9);
-            padding: 4px;
-            box-sizing: border-box;
+            border: 1px solid rgba(31, 41, 55, 0.9);
+            background: radial-gradient(circle at top left, #020617 0, #020617 60%);
+            padding: 3px;
         }
     </style>
 </head>
@@ -1230,50 +1253,54 @@
                 totalBreakMinutes,
                 allowRebuys,
                 rebuyCutoffHours,
-                schedule,
-                levelMinutes,
                 startingStackValue,
                 tournamentName
             } = structure;
 
-            // Colors
-            const accent = { r: 34, g: 197, b: 94 };    // green
-            const textMain = { r: 20, g: 20, b: 25 };
-            const textMuted = { r: 100, g: 116, b: 139 };
+            // colors matching the app
+            const accent = [34, 197, 94];      // neon green
+            const navy = [15, 23, 42];         // dark navy
+            const textMain = [15, 23, 42];
+            const textMuted = [100, 116, 139];
+
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const marginX = 12;
+            const contentWidth = pageWidth - marginX * 2;
 
             doc.setFont('helvetica', 'normal');
-            doc.setTextColor(textMain.r, textMain.g, textMain.b);
+            doc.setTextColor(...textMain);
 
-            let y = 12;
+            let y = 14;
 
-            // Big tournament name header
-            doc.setFontSize(20);
-            doc.setTextColor(accent.r, accent.g, accent.b);
-            doc.text(tournamentName || 'Home Poker Tournament', 105, y, { align: 'center' });
-            y += 7;
-
-            // Subtitle line
-            doc.setFontSize(11);
-            doc.setTextColor(textMuted.r, textMuted.g, textMuted.b);
+            // HEADER
             const runtimeStr = runtimeHours.toFixed(1).replace(/\.0$/, '');
+            doc.setFontSize(20);
+            doc.setTextColor(...accent);
+            doc.text(tournamentName || 'Home Poker Tournament', pageWidth / 2, y, {
+                align: 'center'
+            });
+            y += 6;
+
+            doc.setFontSize(11);
+            doc.setTextColor(...textMuted);
             doc.text(
                 `Home Poker Tournament Guide • ${players} players • ~${runtimeStr} hours`,
-                105,
+                pageWidth / 2,
                 y,
                 { align: 'center' }
             );
             y += 4;
 
-            // Thin accent line under header
-            doc.setDrawColor(accent.r, accent.g, accent.b);
+            // thin accent line
+            doc.setDrawColor(...accent);
             doc.setLineWidth(0.5);
-            doc.line(20, y, 190, y);
+            doc.line(marginX, y, pageWidth - marginX, y);
             y += 4;
 
-            // --- Hand rankings section ---
-            doc.setTextColor(textMain.r, textMain.g, textMain.b);
+            // HAND RANKINGS
+            doc.setTextColor(...textMain);
             doc.setFontSize(13);
-            doc.text('Hand Rankings (Strongest to Weakest)', 10, y);
+            doc.text('Hand Rankings (Strongest to Weakest)', marginX, y);
             y += 4;
 
             doc.setFontSize(9);
@@ -1321,79 +1348,93 @@
                 }
             ];
 
-            const maxWidth = 185; // mm
             handDescriptions.forEach(item => {
-                const line = item.title + ': ' + item.desc;
-                const wrapped = doc.splitTextToSize(line, maxWidth);
-                doc.text(wrapped, 12, y);
+                const label = `${item.title}: `;
+                const text = item.desc;
+                const labelWidth = doc.getTextWidth(label);
+
+                let lineY = y;
+                doc.text(label, marginX, lineY);
+                const wrapped = doc.splitTextToSize(text, contentWidth - labelWidth);
+                doc.text(wrapped, marginX + labelWidth, lineY);
                 y += wrapped.length * 4;
             });
 
             y += 3;
 
-            // --- Tournament summary boxed section ---
+            // TOURNAMENT SUMMARY (dynamic box)
             doc.setFontSize(12);
-            doc.setTextColor(textMain.r, textMain.g, textMain.b);
-            doc.text('Tournament Summary', 10, y);
+            doc.setTextColor(...textMain);
+            doc.text('Tournament Summary', marginX, y);
             y += 2;
 
-            // Draw a light box around the summary block
             const summaryTop = y;
-            const summaryHeight = 22;
+            doc.setFontSize(10);
+
+            const summaryLines = [];
+            summaryLines.push(`Name: ${tournamentName || 'Home Poker Tournament'}`);
+            summaryLines.push(`Players: ${players}`);
+            summaryLines.push(`Runtime: ${runtimeStr} hours (includes breaks)`);
+            summaryLines.push(`Level length: ${structure.levelMinutes} minutes`);
+            summaryLines.push(
+                `Starting stack value (approx.): ${startingStackValue.toLocaleString()}`
+            );
+            if (useBreaks && breaks.length) {
+                summaryLines.push(`Total break time: ${totalBreakMinutes} minutes`);
+            } else {
+                summaryLines.push('Breaks: none scheduled');
+            }
+            if (allowRebuys && rebuyCutoffHours) {
+                summaryLines.push(
+                    `Rebuys: allowed until ${rebuyCutoffHours
+                        .toFixed(1)
+                        .replace(/\.0$/, '')} hours from start`
+                );
+            } else {
+                summaryLines.push('Rebuys: not allowed');
+            }
+
+            summaryLines.forEach(line => {
+                doc.text(line, marginX + 3, y + 3);
+                y += 4;
+            });
+
+            const summaryBottom = y + 2;
             doc.setDrawColor(226, 232, 240);
             doc.setLineWidth(0.3);
-            doc.roundedRect(9, summaryTop - 3, 192, summaryHeight, 2, 2);
+            doc.roundedRect(
+                marginX - 1,
+                summaryTop,
+                contentWidth + 2,
+                summaryBottom - summaryTop,
+                2,
+                2
+            );
+            y = summaryBottom + 4;
 
-            doc.setFontSize(10);
-            y += 3;
-            doc.text(`Name: ${tournamentName}`, 12, y); y += 4;
-            doc.text(`Players: ${players}`, 12, y); y += 4;
-            doc.text(`Runtime: ${runtimeStr} hours (includes breaks)`, 12, y); y += 4;
-            doc.text(`Level length: ${levelMinutes} minutes`, 12, y); y += 4;
-            doc.text(`Starting stack value (approx.): ${startingStackValue.toLocaleString()}`, 12, y); y += 4;
-
-            if (useBreaks && breaks.length) {
-                doc.text(`Total break time: ${totalBreakMinutes} minutes`, 12, y); y += 4;
-            } else {
-                doc.text('Breaks: none scheduled', 12, y); y += 4;
-            }
-
-            if (allowRebuys && rebuyCutoffHours) {
-                doc.text(
-                    `Rebuys: allowed until ${rebuyCutoffHours.toFixed(1).replace(/\.0$/, '')} hours from start`,
-                    12,
-                    y
-                );
-                y += 4;
-            } else {
-                doc.text('Rebuys: not allowed', 12, y); y += 4;
-            }
-
-            y += 4;
-
-            // --- Suggested starting stack section ---
-            if (currentStackSuggestion && currentStackSuggestion.colors.some(c => c.perPlayerCount > 0)) {
+            // SUGGESTED STARTING STACK
+            if (
+                window.currentStackSuggestion &&
+                currentStackSuggestion.colors.some(c => c.perPlayerCount > 0)
+            ) {
                 doc.setFontSize(12);
-                doc.setTextColor(accent.r, accent.g, accent.b);
-                doc.text('Suggested Starting Stack (per player)', 10, y);
-                y += 2;
-
-                doc.setTextColor(textMuted.r, textMuted.g, textMuted.b);
-                doc.setFontSize(9);
-                doc.text(
-                    `Approx. ${currentStackSuggestion.chipsPerPlayer} chips per player, ` +
-                    `value ~${currentStackSuggestion.totalValuePerPlayer.toLocaleString()}.`,
-                    12,
-                    y
-                );
+                doc.setTextColor(...accent);
+                doc.text('Suggested Starting Stack (per player)', marginX, y);
                 y += 3;
 
-                // Box around the table
-                const stackTableTop = y;
+                doc.setFontSize(9);
+                doc.setTextColor(...textMuted);
+                doc.text(
+                    `Approx. ${currentStackSuggestion.chipsPerPlayer} chips per player, value ~${currentStackSuggestion.totalValuePerPlayer.toLocaleString()}.`,
+                    marginX,
+                    y
+                );
+                y += 2;
 
                 if (doc.autoTable) {
+                    const startY = y + 2;
                     doc.autoTable({
-                        startY: y,
+                        startY,
                         head: [['Color', 'Value', 'Chips / Player', 'Total Used']],
                         body: currentStackSuggestion.colors
                             .filter(c => c.perPlayerCount > 0)
@@ -1403,42 +1444,53 @@
                                 String(c.perPlayerCount),
                                 String(c.perPlayerCount * players)
                             ]),
-                        styles: { fontSize: 9 },
-                        headStyles: { fillColor: [15, 23, 42], textColor: [248, 250, 252] },
-                        alternateRowStyles: { fillColor: [243, 244, 246] },
-                        bodyStyles: { textColor: [30, 41, 59] },
-                        margin: { left: 10, right: 10 }
+                        styles: {
+                            fontSize: 9,
+                            textColor: [15, 23, 42]
+                        },
+                        headStyles: {
+                            fillColor: navy,
+                            textColor: [248, 250, 252]
+                        },
+                        alternateRowStyles: {
+                            fillColor: [241, 245, 249]
+                        },
+                        margin: { left: marginX, right: marginX }
                     });
 
-                    const stackTableBottom = doc.lastAutoTable.finalY;
+                    const tableBottom = doc.lastAutoTable.finalY;
                     doc.setDrawColor(226, 232, 240);
-                    doc.setLineWidth(0.3);
-                    doc.roundedRect(9, stackTableTop - 3, 192, (stackTableBottom - stackTableTop) + 6, 2, 2);
-
-                    y = stackTableBottom + 6;
+                    doc.roundedRect(
+                        marginX - 1,
+                        startY - 3,
+                        contentWidth + 2,
+                        tableBottom - startY + 6,
+                        2,
+                        2
+                    );
+                    y = tableBottom + 6;
                 } else {
-                    y += 6;
+                    y += 8;
                 }
             }
 
-            // If near bottom, move to new page before blinds
+            // New page if needed before blinds
             if (y > 210) {
                 doc.addPage();
-                y = 15;
+                y = 16;
             }
 
-            // --- Blind schedule section (with breaks & rebuy notes) ---
+            // BLIND SCHEDULE
             doc.setFontSize(12);
-            doc.setTextColor(accent.r, accent.g, accent.b);
-            doc.text('Blind Schedule', 10, y);
+            doc.setTextColor(...accent);
+            doc.text('Blind Schedule', marginX, y);
             y += 2;
 
             if (doc.autoTable) {
                 const displayRows = buildDisplaySchedule(structure);
 
-                doc.setTextColor(textMain.r, textMain.g, textMain.b);
                 doc.autoTable({
-                    startY: y,
+                    startY: y + 2,
                     head: [['Lvl', 'Start', 'End', 'SB', 'BB', 'Note']],
                     body: displayRows.map(r => {
                         if (r.type === 'level') {
@@ -1451,26 +1503,36 @@
                                 r.note || ''
                             ];
                         } else {
-                            // break row
                             return ['—', '', '', '', '', r.note || 'Break'];
                         }
                     }),
-                    styles: { fontSize: 9 },
-                    headStyles: { fillColor: [15, 23, 42], textColor: [248, 250, 252] },
-                    alternateRowStyles: { fillColor: [243, 244, 246] },
-                    bodyStyles: { textColor: [30, 41, 59] },
-                    margin: { left: 10, right: 10 }
+                    styles: {
+                        fontSize: 9,
+                        textColor: [15, 23, 42]
+                    },
+                    headStyles: {
+                        fillColor: navy,
+                        textColor: [248, 250, 252]
+                    },
+                    alternateRowStyles: {
+                        fillColor: [241, 245, 249]
+                    },
+                    margin: { left: marginX, right: marginX }
                 });
             }
 
-            // Optional footer
+            // FOOTER
             const pageHeight = doc.internal.pageSize.getHeight();
             doc.setFontSize(8);
-            doc.setTextColor(textMuted.r, textMuted.g, textMuted.b);
-            doc.text('Generated with Home Poker Tournament Planner', 105, pageHeight - 6, { align: 'center' });
+            doc.setTextColor(...textMuted);
+            doc.text(
+                'Generated with Home Poker Tournament Planner',
+                pageWidth / 2,
+                pageHeight - 6,
+                { align: 'center' }
+            );
 
             try {
-                // Open PDF in a new tab/window (works better on iOS)
                 doc.output('dataurlnewwindow');
             } catch (e) {
                 alert('Error generating PDF: ' + (e && e.message ? e.message : e));
