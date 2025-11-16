@@ -306,6 +306,13 @@
                     <h2>Setup</h2>
                     <div class="form-grid">
                         <div class="form-row">
+                            <label for="tournamentName">Tournament name</label>
+                            <input id="tournamentName" type="text" placeholder="Friday Night Home Game" />
+                            <span class="helper">
+                                This will appear at the top of the PDF and in the summary.
+                            </span>
+                        </div>
+                        <div class="form-row">
                             <label for="players">Number of players</label>
                             <input id="players" type="number" min="3" max="10" value="6" />
                             <span class="helper">Designed for 3–10 players.</span>
@@ -488,10 +495,14 @@
             const allowRebuys = document.getElementById('allowRebuys');
             const rebuysConfig = document.getElementById('rebuysConfig');
             const speedSelect = document.getElementById('structureSpeed');
-            if (speedSelect) {
-              speedSelect.addEventListener('change', recalcAll);
-            }
+            const nameInput = document.getElementById('tournamentName');
 
+            if (speedSelect) {
+                speedSelect.addEventListener('change', recalcAll);
+            }
+            if (nameInput) {
+                nameInput.addEventListener('input', recalcAll);
+            }
             useBreaks.addEventListener('change', () => {
                 breaksConfig.style.display = useBreaks.checked ? 'block' : 'none';
                 recalcAll();
@@ -800,7 +811,8 @@
             const errorBox = document.getElementById('errorBox');
             errorBox.style.display = 'none';
             errorBox.textContent = '';
-
+            const nameEl = document.getElementById('tournamentName');
+            const tournamentName = (nameEl ? nameEl.value.trim() : '') || 'Home Poker Tournament';
             const players = clamp(parseInt(document.getElementById('players').value || '0', 10), 1, 50);
             const runtimeHours = Math.max(0, parseFloat(document.getElementById('runtimeHours').value || '0'));
 
@@ -864,11 +876,11 @@
             let targetAvgBBAtEnd;
 
             if (speed === 'slow') {
-              targetAvgBBAtEnd = 16;  // slower blind growth, deeper average stack
+                targetAvgBBAtEnd = 16;  // slower blind growth, deeper average stack
             } else if (speed === 'turbo') {
-              targetAvgBBAtEnd = 8;   // faster blind growth, shallower avg stack
+                targetAvgBBAtEnd = 8;   // faster blind growth, shallower avg stack
             } else {
-              targetAvgBBAtEnd = 12;  // normal
+                targetAvgBBAtEnd = 12;  // normal
             }
 
             let endBBRaw = startingStackValue / targetAvgBBAtEnd;
@@ -931,7 +943,8 @@
                 levelsCount,
                 levelMinutes,
                 schedule,
-                startingStackValue
+                startingStackValue,
+                tournamentName
             };
         }
 
@@ -1024,7 +1037,8 @@
                 rebuyCutoffHours,
                 schedule,
                 levelMinutes,
-                startingStackValue
+                startingStackValue,
+                tournamentName
             } = structure;
 
             const runtimeStr = runtimeHours.toFixed(1).replace(/\.0$/, '');
@@ -1032,6 +1046,7 @@
         <div class="preview-section-title">Tournament Summary</div>
         <table>
           <tbody>
+            <tr><td>Name</td><td>${tournamentName}</td></tr>
             <tr><td>Players</td><td>${players}</td></tr>
             <tr><td>Runtime</td><td>${runtimeStr} hours</td></tr>
             <tr><td>Level length</td><td>${levelMinutes} minutes</td></tr>
@@ -1198,7 +1213,6 @@
             return `${hStr}:${mStr}`;
         }
 
-        // --- PDF generation with beginner-friendly hand guide ---
         function generatePdf(structure) {
             if (!window.jspdf || !window.jspdf.jsPDF) {
                 alert('PDF engine (jsPDF) did not load. Check your connection and try again.');
@@ -1218,33 +1232,56 @@
                 rebuyCutoffHours,
                 schedule,
                 levelMinutes,
-                startingStackValue
+                startingStackValue,
+                tournamentName
             } = structure;
 
-            let y = 10;
+            // Colors
+            const accent = { r: 34, g: 197, b: 94 };    // green
+            const textMain = { r: 20, g: 20, b: 25 };
+            const textMuted = { r: 100, g: 116, b: 139 };
 
-            doc.setFontSize(18);
-            doc.text('Home Poker Tournament Guide', 105, y, { align: 'center' });
-            y += 8;
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(textMain.r, textMain.g, textMain.b);
+
+            let y = 12;
+
+            // Big tournament name header
+            doc.setFontSize(20);
+            doc.setTextColor(accent.r, accent.g, accent.b);
+            doc.text(tournamentName || 'Home Poker Tournament', 105, y, { align: 'center' });
+            y += 7;
+
+            // Subtitle line
             doc.setFontSize(11);
+            doc.setTextColor(textMuted.r, textMuted.g, textMuted.b);
+            const runtimeStr = runtimeHours.toFixed(1).replace(/\.0$/, '');
             doc.text(
-                `Players: ${players}   Runtime: ${runtimeHours.toFixed(1).replace(/\.0$/, '')} hours`,
+                `Home Poker Tournament Guide • ${players} players • ~${runtimeStr} hours`,
                 105,
                 y,
                 { align: 'center' }
             );
-            y += 6;
+            y += 4;
 
-            // Beginner-friendly hand ranking guide
+            // Thin accent line under header
+            doc.setDrawColor(accent.r, accent.g, accent.b);
+            doc.setLineWidth(0.5);
+            doc.line(20, y, 190, y);
+            y += 4;
+
+            // --- Hand rankings section ---
+            doc.setTextColor(textMain.r, textMain.g, textMain.b);
             doc.setFontSize(13);
             doc.text('Hand Rankings (Strongest to Weakest)', 10, y);
-            y += 5;
+            y += 4;
+
             doc.setFontSize(9);
 
             const handDescriptions = [
                 {
                     title: 'Royal Flush',
-                    desc: 'The combination of ten, jack, queen, king, ace, all of the same suit.'
+                    desc: 'The best possible hand in Texas hold\'em is the combination of ten, jack, queen, king, ace, all of the same suit.'
                 },
                 {
                     title: 'Straight Flush',
@@ -1280,11 +1317,11 @@
                 },
                 {
                     title: 'High Card',
-                    desc: 'No made hand; the highest card in your hand determines the winner.'
+                    desc: 'The highest ranked card in your hand with an ace being the highest and two being the lowest.'
                 }
             ];
 
-            const maxWidth = 180; // mm
+            const maxWidth = 185; // mm
             handDescriptions.forEach(item => {
                 const line = item.title + ': ' + item.desc;
                 const wrapped = doc.splitTextToSize(line, maxWidth);
@@ -1293,12 +1330,25 @@
             });
 
             y += 3;
+
+            // --- Tournament summary boxed section ---
             doc.setFontSize(12);
+            doc.setTextColor(textMain.r, textMain.g, textMain.b);
             doc.text('Tournament Summary', 10, y);
-            y += 4;
+            y += 2;
+
+            // Draw a light box around the summary block
+            const summaryTop = y;
+            const summaryHeight = 22;
+            doc.setDrawColor(226, 232, 240);
+            doc.setLineWidth(0.3);
+            doc.roundedRect(9, summaryTop - 3, 192, summaryHeight, 2, 2);
+
             doc.setFontSize(10);
+            y += 3;
+            doc.text(`Name: ${tournamentName}`, 12, y); y += 4;
             doc.text(`Players: ${players}`, 12, y); y += 4;
-            doc.text(`Runtime: ${runtimeHours.toFixed(1).replace(/\.0$/, '')} hours`, 12, y); y += 4;
+            doc.text(`Runtime: ${runtimeStr} hours (includes breaks)`, 12, y); y += 4;
             doc.text(`Level length: ${levelMinutes} minutes`, 12, y); y += 4;
             doc.text(`Starting stack value (approx.): ${startingStackValue.toLocaleString()}`, 12, y); y += 4;
 
@@ -1319,12 +1369,27 @@
                 doc.text('Rebuys: not allowed', 12, y); y += 4;
             }
 
-            // Suggested starting stack table
+            y += 4;
+
+            // --- Suggested starting stack section ---
             if (currentStackSuggestion && currentStackSuggestion.colors.some(c => c.perPlayerCount > 0)) {
-                y += 2;
                 doc.setFontSize(12);
+                doc.setTextColor(accent.r, accent.g, accent.b);
                 doc.text('Suggested Starting Stack (per player)', 10, y);
                 y += 2;
+
+                doc.setTextColor(textMuted.r, textMuted.g, textMuted.b);
+                doc.setFontSize(9);
+                doc.text(
+                    `Approx. ${currentStackSuggestion.chipsPerPlayer} chips per player, ` +
+                    `value ~${currentStackSuggestion.totalValuePerPlayer.toLocaleString()}.`,
+                    12,
+                    y
+                );
+                y += 3;
+
+                // Box around the table
+                const stackTableTop = y;
 
                 if (doc.autoTable) {
                     doc.autoTable({
@@ -1339,19 +1404,39 @@
                                 String(c.perPlayerCount * players)
                             ]),
                         styles: { fontSize: 9 },
-                        headStyles: { fillColor: [15, 23, 42] }
+                        headStyles: { fillColor: [15, 23, 42], textColor: [248, 250, 252] },
+                        alternateRowStyles: { fillColor: [243, 244, 246] },
+                        bodyStyles: { textColor: [30, 41, 59] },
+                        margin: { left: 10, right: 10 }
                     });
-                    y = doc.lastAutoTable.finalY + 4;
+
+                    const stackTableBottom = doc.lastAutoTable.finalY;
+                    doc.setDrawColor(226, 232, 240);
+                    doc.setLineWidth(0.3);
+                    doc.roundedRect(9, stackTableTop - 3, 192, (stackTableBottom - stackTableTop) + 6, 2, 2);
+
+                    y = stackTableBottom + 6;
+                } else {
+                    y += 6;
                 }
             }
 
+            // If near bottom, move to new page before blinds
+            if (y > 210) {
+                doc.addPage();
+                y = 15;
+            }
+
+            // --- Blind schedule section (with breaks & rebuy notes) ---
             doc.setFontSize(12);
+            doc.setTextColor(accent.r, accent.g, accent.b);
             doc.text('Blind Schedule', 10, y);
             y += 2;
 
             if (doc.autoTable) {
                 const displayRows = buildDisplaySchedule(structure);
 
+                doc.setTextColor(textMain.r, textMain.g, textMain.b);
                 doc.autoTable({
                     startY: y,
                     head: [['Lvl', 'Start', 'End', 'SB', 'BB', 'Note']],
@@ -1371,13 +1456,21 @@
                         }
                     }),
                     styles: { fontSize: 9 },
-                    headStyles: { fillColor: [15, 23, 42] }
+                    headStyles: { fillColor: [15, 23, 42], textColor: [248, 250, 252] },
+                    alternateRowStyles: { fillColor: [243, 244, 246] },
+                    bodyStyles: { textColor: [30, 41, 59] },
+                    margin: { left: 10, right: 10 }
                 });
             }
 
+            // Optional footer
+            const pageHeight = doc.internal.pageSize.getHeight();
+            doc.setFontSize(8);
+            doc.setTextColor(textMuted.r, textMuted.g, textMuted.b);
+            doc.text('Generated with Home Poker Tournament Planner', 105, pageHeight - 6, { align: 'center' });
 
             try {
-                // Open PDF in a new tab/window (more reliable on iOS)
+                // Open PDF in a new tab/window (works better on iOS)
                 doc.output('dataurlnewwindow');
             } catch (e) {
                 alert('Error generating PDF: ' + (e && e.message ? e.message : e));
