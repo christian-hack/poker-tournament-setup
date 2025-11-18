@@ -2199,41 +2199,57 @@
      
      }
    
-     // Footer
-   
-     doc.setFont('helvetica', 'normal');
-   
-     doc.setFontSize(8.5);
-   
-     doc.setTextColor(...p.textMuted);
-   
-     doc.text(
-     
-       'Generated with Home Poker Tournament Planner',
-     
-       pageWidth / 2,
-     
-       pageHeight - 6,
-     
-       { align: 'center' }
-     
-     );
-   
-     // Open exactly ONE tab with the full 2-page PDF
-   
-     try {
-     
-       const blobUrl = doc.output('bloburl');
-     
-       window.open(blobUrl, '_blank');
-     
-     } catch (e) {
-     
-       alert('Error generating PDF: ' + (e && e.message ? e.message : e));
-     
-     }
-   
-   }
+     // Footer
+     doc.setFont('helvetica', 'normal');
+     doc.setFontSize(8.5);
+     doc.setTextColor(...p.textMuted);
+     doc.text(
+       'Generated with Home Poker Tournament Planner',
+       pageWidth / 2,
+       pageHeight - 6,
+       { align: 'center' }
+     );
+
+     // --- Open / download PDF in a mobile-friendly way ---
+     try {
+       const ua = navigator.userAgent || '';
+       const isIOS =
+         /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+       const isStandalone =
+         window.matchMedia &&
+         window.matchMedia('(display-mode: standalone)').matches;
+
+       // iOS Safari (and PWA standalone) are picky about blob URLs.
+       if (isIOS || isStandalone) {
+         // Replace the current page with the PDF viewer.
+         const dataUri = doc.output('dataurlstring');
+         window.location.href = dataUri;
+         return;
+       }
+
+       // Everyone else: try opening a new tab with a blob URL.
+       const blobUrl = doc.output('bloburl');
+       const win = window.open(blobUrl, '_blank');
+
+       // If popup was blocked or failed, fall back to a download link.
+       if (!win || win.closed || typeof win.closed === 'undefined') {
+         const blob = doc.output('blob');
+         const url = URL.createObjectURL(blob);
+         const link = document.createElement('a');
+         link.href = url;
+         link.download = 'poker-tournament-guide.pdf';
+         document.body.appendChild(link);
+         link.click();
+         document.body.removeChild(link);
+         URL.revokeObjectURL(url);
+       }
+     } catch (e) {
+       alert(
+         'Error generating PDF: ' +
+           (e && e.message ? e.message : e)
+       );
+     }
+    }
     </script>
 </body>
 
