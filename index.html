@@ -685,83 +685,85 @@
 
 
         function setupFormInteractions() {
-            const useBreaks = document.getElementById('useBreaks');
-            const breaksConfig = document.getElementById('breaksConfig');
-            const allowRebuys = document.getElementById('allowRebuys');
-            const rebuysConfig = document.getElementById('rebuysConfig');
-            const speedSelect = document.getElementById('structureSpeed');
-            const nameInput = document.getElementById('tournamentName');
+            const useBreaks     = document.getElementById('useBreaks');
+            const breaksConfig  = document.getElementById('breaksConfig');
+            const allowRebuys   = document.getElementById('allowRebuys');
+            const rebuysConfig  = document.getElementById('rebuysConfig');
+            const speedSelect   = document.getElementById('structureSpeed');
+            const nameInput     = document.getElementById('tournamentName');
             const generatePdfBtn = document.getElementById('generatePdfBtn');
 
-            if (generatePdfBtn) {
-              generatePdfBtn.addEventListener('click', function (e) {
-                e.preventDefault();
-
-                // Decide which layout to use based on the radio / dropdown you added.
-                // If you used radios like name="pdfMode" with values "mobile" / "print":
-                const selectedMode =
-                  document.querySelector('input[name="pdfMode"]:checked')?.value || 'mobile';
-
-                const useMobileLayout = selectedMode === 'mobile';
-
-                // Call your existing generator. Only ONE call, so no more 2 tabs.
-                generatePdf({ mobile: useMobileLayout });
-              });
-            }
+            // Structure speed + name live-preview
             if (speedSelect) {
                 speedSelect.addEventListener('change', recalcAll);
             }
             if (nameInput) {
                 nameInput.addEventListener('input', recalcAll);
             }
-            generateBtn.addEventListener('click', () => {
-                const structure = calculateStructure();
-                if (!structure) return;
-                const styleSelect = document.getElementById('pdfStyle');
-                const pdfStyle = styleSelect ? styleSelect.value : 'mobile';
-                if (typeof gtag === 'function') {
-                    gtag('event', 'generate_pdf', {
-                        players: structure.players,
-                        runtime_hours: structure.runtimeHours,
-                        breaks_enabled: structure.useBreaks,
-                        rebuys_enabled: structure.allowRebuys
-                    });
-                }
-                console.log('Generating PDF style:', pdfStyle);
-                generatePdf(structure, pdfStyle);
-            });
+
+            // ✅ Single, correct click handler for the PDF button
+            if (generatePdfBtn) {
+                generatePdfBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+
+                    const structure = calculateStructure();
+                    if (!structure) return;
+
+                    const styleSelect = document.getElementById('pdfStyle');
+                    const pdfStyle = styleSelect ? styleSelect.value : 'mobile'; // 'mobile' or 'print'
+
+                    // Optional GA event
+                    if (typeof gtag === 'function') {
+                        gtag('event', 'generate_pdf', {
+                            players: structure.players,
+                            runtime_hours: structure.runtimeHours,
+                            breaks_enabled: structure.useBreaks,
+                            rebuys_enabled: structure.allowRebuys
+                        });
+                    }
+
+                    console.log('Generating PDF style:', pdfStyle);
+                    generatePdf(structure, pdfStyle);
+                });
+            }
+
+            // Breaks toggle
             useBreaks.addEventListener('change', () => {
                 breaksConfig.style.display = useBreaks.checked ? 'block' : 'none';
                 recalcAll();
             });
 
+            // Rebuys toggle
             allowRebuys.addEventListener('change', () => {
                 rebuysConfig.style.display = allowRebuys.checked ? 'block' : 'none';
                 recalcAll();
             });
 
-            ['players', 'runtimeHours', 'breakMinutes', 'breakFrequencyHours', 'rebuyCutoffHours'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    el.addEventListener('input', recalcAll);
-                }
-            });
+            // Numeric inputs that should trigger recalculation
+            ['players', 'runtimeHours', 'breakMinutes', 'breakFrequencyHours', 'rebuyCutoffHours']
+                .forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.addEventListener('input', recalcAll);
+                    }
+                });
 
+            // Stack-usage radio buttons
             document.querySelectorAll('input[name="stackUsageMode"]').forEach(radio => {
                 radio.addEventListener('change', recalcAll);
             });
 
+            // Chip value scale buttons
             document.getElementById('decreaseValuesBtn').addEventListener('click', () => {
-                valueScaleStep = Math.max(valueScaleStep - 1, -2); // limit how tiny it gets
+                valueScaleStep = Math.max(valueScaleStep - 1, -2);
                 recalcAll();
             });
 
             document.getElementById('increaseValuesBtn').addEventListener('click', () => {
-                valueScaleStep = Math.min(valueScaleStep + 1, 3); // limit how huge it gets
+                valueScaleStep = Math.min(valueScaleStep + 1, 3);
                 recalcAll();
             });
         }
-
         function recalcAll() {
             recalcChipUsageAndStacks();
             const structure = calculateStructure();
