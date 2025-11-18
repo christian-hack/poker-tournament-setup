@@ -1443,18 +1443,17 @@
             const pageHeight = doc.internal.pageSize.getHeight();
             const marginX = 14;
             const contentWidth = pageWidth - marginX * 2;
-
             const runtimeStr = runtimeHours.toFixed(1).replace(/\.0$/, '');
 
             // Palettes
             const mobilePalette = {
                 bg: [2, 6, 23],
-                cardBg: [15, 23, 42],
+                cardBg: [24, 31, 44],      // darker gray/charcoal instead of blue
                 textMain: [241, 245, 249],
                 textMuted: [156, 163, 175],
                 accent: [34, 197, 94],
-                border: [30, 64, 175],
-                tableAlt: [15, 23, 42],
+                border: [51, 65, 85],
+                tableAlt: [30, 41, 59],
                 tableHeader: [15, 23, 42]
             };
 
@@ -1503,13 +1502,12 @@
             );
             y += 6;
 
-            // WOW FACTOR: small green pill with quick info
+            // WOW FACTOR: small green pill
             const pillText = 'Blinds • Stack • Breaks';
             const pillWidth = doc.getTextWidth(pillText) + 10;
             const pillX = (pageWidth - pillWidth) / 2;
             const pillY = y - 4;
 
-            doc.setDrawColor(0, 0, 0);
             doc.setFillColor(...p.accent);
             doc.roundedRect(pillX, pillY, pillWidth, 7, 3, 3, 'F');
 
@@ -1524,7 +1522,7 @@
             doc.line(marginX, y, pageWidth - marginX, y);
             y += 8;
 
-            // --- Tournament Summary section ---
+            // --- Tournament Summary ---
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(14);
             doc.setTextColor(...p.textMain);
@@ -1554,11 +1552,26 @@
                 summaryLines.push('Rebuys: not allowed');
             }
 
+            // NEW: starting stack breakdown if we have it
+            if (
+                window.currentStackSuggestion &&
+                currentStackSuggestion.colors.some(c => c.perPlayerCount > 0)
+            ) {
+                summaryLines.push('Starting stack breakdown:');
+                currentStackSuggestion.colors
+                    .filter(c => c.perPlayerCount > 0)
+                    .forEach(c => {
+                        summaryLines.push(
+                            `• ${c.perPlayerCount} × ${c.name} (${c.value})`
+                        );
+                    });
+            }
+
             const lineH = 5;
             const cardPaddingY = 4;
             const cardHeight = cardPaddingY * 2 + summaryLines.length * lineH;
 
-            // Background card
+            // Card background
             doc.setDrawColor(...p.border);
             if (isMobileStyle) {
                 doc.setFillColor(...p.cardBg);
@@ -1593,12 +1606,12 @@
             });
             y = y + cardHeight + 10;
 
-            // --- Hand Rankings section ---
+            // --- Hand Rankings ---
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(14);
             doc.setTextColor(...p.textMain);
             doc.text('Hand Rankings (Strongest to Weakest)', marginX, y);
-            y += 5;
+            y += 6;
 
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(10.5);
@@ -1648,17 +1661,52 @@
             ];
 
             handDescriptions.forEach(item => {
-                // bold label
                 doc.setFont('helvetica', 'bold');
-                doc.text(item.title + ':', marginX, y);
-                const labelWidth = doc.getTextWidth(item.title + ': ') + 1;
+                const label = item.title + ':';
+                const labelWidth = doc.getTextWidth(label + ' ');
+                doc.text(label, marginX, y);
 
-                // normal desc
                 doc.setFont('helvetica', 'normal');
-                const wrapped = doc.splitTextToSize(item.desc, contentWidth - labelWidth);
+                const wrapped = doc.splitTextToSize(
+                    item.desc,
+                    contentWidth - labelWidth
+                );
                 doc.text(wrapped, marginX + labelWidth, y);
                 y += wrapped.length * 5.0;
             });
+
+            // Fill remaining space on page 1 with a small "Quick Table Reminders" section
+            if (y < pageHeight - 40) {
+                y += 6;
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(12.5);
+                doc.setTextColor(...p.textMain);
+                doc.text('Quick Table Reminders', marginX, y);
+                y += 5;
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.setTextColor(...p.textMuted);
+
+                const tips = [
+                    'Act in turn and keep your cards visible on the table.',
+                    'Verbal declarations are binding; state bets and raises clearly.',
+                    'Big chips in front, smaller chips behind, for easy counting.',
+                    'Protect your cards with a chip or card protector when you look away.'
+                ];
+
+                tips.forEach(tip => {
+                    const bullet = '• ';
+                    const bulletWidth = doc.getTextWidth(bullet);
+                    doc.text(bullet, marginX, y);
+                    const wrapped = doc.splitTextToSize(
+                        tip,
+                        contentWidth - bulletWidth
+                    );
+                    doc.text(wrapped, marginX + bulletWidth, y);
+                    y += wrapped.length * 4.8;
+                });
+            }
 
             // ---------------- PAGE 2 ----------------
             doc.addPage();
@@ -1808,8 +1856,10 @@
                 { align: 'center' }
             );
 
+            // ---------- open as ONE tab, via blob URL ----------
             try {
-                doc.output('dataurlnewwindow');
+                const blobUrl = doc.output('bloburl');
+                window.open(blobUrl, '_blank');
             } catch (e) {
                 alert('Error generating PDF: ' + (e && e.message ? e.message : e));
             }
