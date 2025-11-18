@@ -621,8 +621,8 @@
                         </span>
                     </div>
                     <div class="btn-row">
-                        <button id="generateBtn" type="button">
-                            <span>Generate PDF Guide</span>
+                        <button id="generatePdfBtn" type="button" class="primary-btn">
+                          Generate PDF Guide
                         </button>
                         <span class="small-note">
                             The PDF opens in a new tab so you can save or share it.
@@ -691,8 +691,23 @@
             const rebuysConfig = document.getElementById('rebuysConfig');
             const speedSelect = document.getElementById('structureSpeed');
             const nameInput = document.getElementById('tournamentName');
-            const generateBtn = document.getElementById('generateBtn');
+            const generatePdfBtn = document.getElementById('generatePdfBtn');
 
+            if (generatePdfBtn) {
+              generatePdfBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                // Decide which layout to use based on the radio / dropdown you added.
+                // If you used radios like name="pdfMode" with values "mobile" / "print":
+                const selectedMode =
+                  document.querySelector('input[name="pdfMode"]:checked')?.value || 'mobile';
+
+                const useMobileLayout = selectedMode === 'mobile';
+
+                // Call your existing generator. Only ONE call, so no more 2 tabs.
+                generatePdf({ mobile: useMobileLayout });
+              });
+            }
             if (speedSelect) {
                 speedSelect.addEventListener('change', recalcAll);
             }
