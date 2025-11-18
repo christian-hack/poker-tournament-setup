@@ -704,6 +704,15 @@
                 if (!structure) return;
                 const styleSelect = document.getElementById('pdfStyle');
                 const pdfStyle = styleSelect ? styleSelect.value : 'mobile';
+                if (typeof gtag === 'function') {
+                    gtag('event', 'generate_pdf', {
+                        players: structure.players,
+                        runtime_hours: structure.runtimeHours,
+                        breaks_enabled: structure.useBreaks,
+                        rebuys_enabled: structure.allowRebuys
+                    });
+                }
+                console.log('Generating PDF style:', pdfStyle);
                 generatePdf(structure, pdfStyle);
             });
             useBreaks.addEventListener('change', () => {
@@ -735,22 +744,6 @@
             document.getElementById('increaseValuesBtn').addEventListener('click', () => {
                 valueScaleStep = Math.min(valueScaleStep + 1, 3); // limit how huge it gets
                 recalcAll();
-            });
-
-            document.getElementById('generateBtn').addEventListener('click', () => {
-                const structure = calculateStructure();
-                if (!structure) return;
-
-                // Track usage in Google Analytics if gtag is available
-                if (typeof gtag === 'function') {
-                    gtag('event', 'generate_pdf', {
-                        players: structure.players,
-                        runtime_hours: structure.runtimeHours,
-                        breaks_enabled: structure.useBreaks,
-                        rebuys_enabled: structure.allowRebuys
-                    });
-                }
-                generatePdf(structure, pdfStyle);
             });
         }
 
@@ -1416,484 +1409,814 @@
             return `${hStr}:${mStr}`;
         }
 
-        function generatePdf(structure, pdfStyle) {
-            if (!window.jspdf || !window.jspdf.jsPDF) {
-                alert('PDF engine (jsPDF) did not load. Check your connection and try again.');
-                return;
-            }
+    function generatePdf(structure, pdfStyle) {
+   
+     if (!window.jspdf || !window.jspdf.jsPDF) {
+     
+       alert('PDF engine (jsPDF) did not load. Check your connection and try again.');
+     
+       return;
+     
+     }
+   
+     const { jsPDF } = window.jspdf;
+   
+     const isMobileStyle = pdfStyle === 'mobile';
+   
+     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
-            const isMobileStyle = pdfStyle === 'mobile';
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+     const {
+       
+         players,
+       
+         runtimeHours,
+       
+         useBreaks,
+       
+         breaks,
+       
+         totalBreakMinutes,
+       
+         allowRebuys,
+       
+         rebuyCutoffHours,
+       
+         startingStackValue,
+       
+         levelMinutes,
+       
+         tournamentName
 
-            const {
-                players,
-                runtimeHours,
-                useBreaks,
-                breaks,
-                totalBreakMinutes,
-                allowRebuys,
-                rebuyCutoffHours,
-                startingStackValue,
-                levelMinutes,
-                tournamentName
-            } = structure;
-
-            const pageWidth = doc.internal.pageSize.getWidth();
-            const pageHeight = doc.internal.pageSize.getHeight();
-            const marginX = 14;
-            const contentWidth = pageWidth - marginX * 2;
-            const runtimeStr = runtimeHours.toFixed(1).replace(/\.0$/, '');
-
-            // Palettes (dark = more blue, clearer stripes)
-            const mobilePalette = {
-                bg: [3, 7, 30],           // deep navy blue
-                cardBg: [15, 23, 42],     // navy panel
-                textMain: [241, 245, 249],
-                textMuted: [156, 163, 175],
-                accent: [34, 197, 94],
-                border: [51, 65, 85],
-                tableBase: [15, 23, 42],
-                tableAlt: [30, 41, 59]
-            };
-
-            const printPalette = {
-                bg: [255, 255, 255],
-                cardBg: [248, 250, 252],
-                textMain: [15, 23, 42],
-                textMuted: [100, 116, 139],
-                accent: [34, 197, 94],
-                border: [226, 232, 240],
-                tableBase: [255, 255, 255],
-                tableAlt: [241, 245, 249]
-            };
-
-            const p = isMobileStyle ? mobilePalette : printPalette;
-
-            function paintBackground() {
-                doc.setFillColor(...p.bg);
-                doc.rect(0, 0, pageWidth, pageHeight, 'F');
-            }
-
-            paintBackground();
-            doc.setFont('helvetica', 'normal');
-
-            // ---------------- PAGE 1 ----------------
-            let y = 20;
-
-            // Title
-            doc.setTextColor(...p.accent);
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(24);
-            doc.text(tournamentName || 'Home Poker Tournament', pageWidth / 2, y, {
-                align: 'center'
-            });
-            y += 8;
-
-            // Subtitle
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(11);
-            doc.setTextColor(...p.textMuted);
-            doc.text(
-                `Poker Tournament Guide • ${players} players • ~${runtimeStr} hours`,
-                pageWidth / 2,
-                y,
-                { align: 'center' }
-            );
-            y += 6;
-
-            // Small green pill under title
-            const pillText = 'Blinds • Stack • Breaks';
-            const pillWidth = doc.getTextWidth(pillText) + 10;
-            const pillX = (pageWidth - pillWidth) / 2;
-            const pillY = y - 4;
-
-            doc.setFillColor(...p.accent);
-            doc.roundedRect(pillX, pillY, pillWidth, 7, 3, 3, 'F');
-
-            doc.setFontSize(9);
-            doc.setTextColor(2, 6, 23);
-            doc.text(pillText, pageWidth / 2, y + 1, { align: 'center' });
-            y += 8;
-
-            // Accent line
-            doc.setDrawColor(...p.accent);
-            doc.setLineWidth(0.6);
-            doc.line(marginX, y, pageWidth - marginX, y);
-            y += 8;
-
-            // --- Tournament Summary ---
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(14);
-            doc.setTextColor(...p.textMain);
-            doc.text('Tournament Summary', marginX, y);
-            y += 4;
-
-            const summaryLines = [];
-            summaryLines.push(`Name: ${tournamentName || 'Home Poker Tournament'}`);
-            summaryLines.push(`Players: ${players}`);
-            summaryLines.push(`Runtime: ${runtimeStr} hours (includes breaks)`);
-            summaryLines.push(`Level length: ${levelMinutes} minutes`);
-            summaryLines.push(
-                `Starting stack value (approx.): ${startingStackValue.toLocaleString()}`
-            );
-            if (useBreaks && breaks.length) {
-                summaryLines.push(`Total break time: ${totalBreakMinutes} minutes`);
-            } else {
-                summaryLines.push('Breaks: none scheduled');
-            }
-            if (allowRebuys && rebuyCutoffHours) {
-                summaryLines.push(
-                    `Rebuys: allowed until ${rebuyCutoffHours
-                        .toFixed(1)
-                        .replace(/\.0$/, '')} hours from start`
-                );
-            } else {
-                summaryLines.push('Rebuys: not allowed');
-            }
-
-            // Add starting stack breakdown (denoms + counts)
-            if (
-                window.currentStackSuggestion &&
-                currentStackSuggestion.colors.some(c => c.perPlayerCount > 0)
-            ) {
-                summaryLines.push('Starting stack breakdown:');
-                currentStackSuggestion.colors
-                    .filter(c => c.perPlayerCount > 0)
-                    .forEach(c => {
-                        summaryLines.push(
-                            `• ${c.perPlayerCount} × ${c.name} (${c.value})`
-                        );
-                    });
-            }
-
-            const lineH = 5;
-            const cardPaddingY = 4;
-            const cardHeight = cardPaddingY * 2 + summaryLines.length * lineH;
-
-            // Card background
-            doc.setDrawColor(...p.border);
-            if (isMobileStyle) {
-                doc.setFillColor(...p.cardBg);
-                doc.roundedRect(
-                    marginX - 1,
-                    y - 3,
-                    contentWidth + 2,
-                    cardHeight + 6,
-                    3,
-                    3,
-                    'FD'
-                );
-            } else {
-                doc.roundedRect(
-                    marginX - 1,
-                    y - 3,
-                    contentWidth + 2,
-                    cardHeight + 6,
-                    3,
-                    3
-                );
-            }
-
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(11);
-            doc.setTextColor(...p.textMain);
-
-            let textY = y + cardPaddingY;
-            summaryLines.forEach(line => {
-                doc.text(line, marginX + 4, textY);
-                textY += lineH;
-            });
-
-            y = y + cardHeight + 10;
-
-            // --- Hand Rankings ---
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(14);
-            doc.setTextColor(...p.textMain);
-            doc.text('Hand Rankings (Strongest to Weakest)', marginX, y);
-            y += 6;
-
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10.5);
-            doc.setTextColor(...p.textMain);
-
-            const handDescriptions = [
-                {
-                    title: 'Royal Flush',
-                    desc: 'The best possible hand in Texas hold\'em is the combination of ten, jack, queen, king, ace, all of the same suit.'
-                },
-                {
-                    title: 'Straight Flush',
-                    desc: 'Five cards of the same suit in sequential order.'
-                },
-                {
-                    title: 'Four of a Kind',
-                    desc: 'Any four numerically matching cards.'
-                },
-                {
-                    title: 'Full House',
-                    desc: 'Combination of three of a kind and a pair in the same hand.'
-                },
-                {
-                    title: 'Flush',
-                    desc: 'Five cards of the same suit, in any order.'
-                },
-                {
-                    title: 'Straight',
-                    desc: 'Five cards of any suit, in sequential order.'
-                },
-                {
-                    title: 'Three of a Kind',
-                    desc: 'Any three numerically matching cards.'
-                },
-                {
-                    title: 'Two Pair',
-                    desc: 'Two different pairs in the same hand.'
-                },
-                {
-                    title: 'One Pair',
-                    desc: 'Any two numerically matching cards.'
-                },
-                {
-                    title: 'High Card',
-                    desc: 'The highest ranked card in your hand with an ace being the highest and two being the lowest.'
-                }
-            ];
-
-            handDescriptions.forEach(item => {
-                doc.setFont('helvetica', 'bold');
-                const label = item.title + ':';
-                const labelWidth = doc.getTextWidth(label + ' ');
-                doc.text(label, marginX, y);
-
-                doc.setFont('helvetica', 'normal');
-                const wrapped = doc.splitTextToSize(
-                    item.desc,
-                    contentWidth - labelWidth
-                );
-                doc.text(wrapped, marginX + labelWidth, y);
-                y += wrapped.length * 5.0;
-            });
-
-            // --- Dogs playing poker panel (fills the remaining space) ---
-            /* if (y < pageHeight - 40) {
-                y += 6;
-
-                const panelHeight = 32;
-                const panelTop = y;
-
-                // Panel background with subtle gradient effect (approx)
-                if (isMobileStyle) {
-                    doc.setFillColor(11, 15, 35);
-                } else {
-                    doc.setFillColor(248, 250, 252);
-                }
-                doc.setDrawColor(...p.border);
-                doc.roundedRect(
-                    marginX - 1,
-                    panelTop,
-                    contentWidth + 2,
-                    panelHeight,
-                    4,
-                    4,
-                    'FD'
-                );
-
-                // Title text
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(12.5);
-                doc.setTextColor(...p.textMain);
-                doc.text('Table Vibes', marginX + 4, panelTop + 7);
-
-                // "Dogs playing poker" caption
-                doc.setFont('helvetica', 'italic');
-                doc.setFontSize(10.5);
-                doc.setTextColor(...p.textMuted);
-                doc.text(
-                    'Imagine your crew here: dogs playing poker around the table.',
-                    marginX + 4,
-                    panelTop + 13
-                );
-
-                // Simple “art” box hint in the right side where a real image could go
-                const artW = 40;
-                const artH = 22;
-                const artX = pageWidth - marginX - artW;
-                const artY = panelTop + 6;
-
-                doc.setDrawColor(...p.accent);
-                doc.setLineWidth(0.4);
-                doc.roundedRect(artX, artY, artW, artH, 3, 3);
-
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(8.5);
-                doc.setTextColor(...p.textMuted);
-                doc.text('Dogs', artX + artW / 2, artY + artH / 2 - 3, {
-                    align: 'center'
-                });
-                doc.text('playing poker', artX + artW / 2, artY + artH / 2 + 3, {
-                    align: 'center'
-                });
-            } */
-
-            // ---------------- PAGE 2 ----------------
-            doc.addPage();
-            paintBackground();
-            y = 20;
-
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(16);
-            doc.setTextColor(...p.textMain);
-            doc.text('Structure Overview', marginX, y);
-            y += 4;
-
-            doc.setDrawColor(...p.accent);
-            doc.setLineWidth(0.6);
-            doc.line(marginX, y, marginX + 38, y);
-            y += 8;
-
-            // Suggested stack
-            if (
-                window.currentStackSuggestion &&
-                currentStackSuggestion.colors.some(c => c.perPlayerCount > 0)
-            ) {
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(13);
-                doc.setTextColor(...p.accent);
-                doc.text('Suggested Starting Stack (per player)', marginX, y);
-                y += 5;
-
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(10);
-                doc.setTextColor(...p.textMuted);
-                doc.text(
-                    `Approx. ${currentStackSuggestion.chipsPerPlayer} chips per player, value ~${currentStackSuggestion.totalValuePerPlayer.toLocaleString()}.`,
-                    marginX,
-                    y
-                );
-                y += 4;
-
-                if (doc.autoTable) {
-                    const startY = y + 2;
-                    doc.autoTable({
-                        startY,
-                        head: [['Color', 'Value', 'Chips / Player', 'Total Used']],
-                        body: currentStackSuggestion.colors
-                            .filter(c => c.perPlayerCount > 0)
-                            .map(c => [
-                                c.name,
-                                String(c.value),
-                                String(c.perPlayerCount),
-                                String(c.perPlayerCount * players)
-                            ]),
-                        styles: {
-                            fontSize: 9.2,
-                            textColor: isMobileStyle ? [248, 250, 252] : p.textMain,
-                            fillColor: isMobileStyle ? p.tableBase : p.tableBase
-                        },
-                        headStyles: {
-                            fillColor: p.accent,
-                            textColor: [2, 6, 23]
-                        },
-                        alternateRowStyles: {
-                            fillColor: isMobileStyle ? p.tableAlt : p.tableAlt
-                        },
-                        margin: { left: marginX, right: marginX }
-                    });
-
-                    const tableBottom = doc.lastAutoTable.finalY;
-                    doc.setDrawColor(...p.border);
-
-                    if (isMobileStyle) {
-                        doc.setFillColor(...p.cardBg);
-                        doc.roundedRect(
-                            marginX - 1,
-                            startY - 3,
-                            contentWidth + 2,
-                            tableBottom - startY + 6,
-                            3,
-                            3,
-                            'FD'
-                        );
-                    } else {
-                        doc.roundedRect(
-                            marginX - 1,
-                            startY - 3,
-                            contentWidth + 2,
-                            tableBottom - startY + 6,
-                            3,
-                            3
-                        );
-                    }
-
-                    y = tableBottom + 12;
-                } else {
-                    y += 10;
-                }
-            }
-
-            // Blind schedule
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(13);
-            doc.setTextColor(...p.accent);
-            doc.text('Blind Schedule', marginX, y);
-            y += 5;
-
-            if (doc.autoTable) {
-                const displayRows = buildDisplaySchedule(structure);
-
-                doc.autoTable({
-                    startY: y + 2,
-                    head: [['Lvl', 'Start', 'End', 'SB', 'BB', 'Note']],
-                    body: displayRows.map(r => {
-                        if (r.type === 'level') {
-                            return [
-                                String(r.level),
-                                formatMinutes(r.startMin),
-                                formatMinutes(r.endMin),
-                                String(r.sb),
-                                String(r.bb),
-                                r.note || ''
-                            ];
-                        } else {
-                            return ['—', '', '', '', '', r.note || 'Break'];
-                        }
-                    }),
-                    styles: {
-                        fontSize: 9.2,
-                        textColor: isMobileStyle ? [248, 250, 252] : p.textMain,
-                        fillColor: isMobileStyle ? p.tableBase : p.tableBase
-                    },
-                    headStyles: {
-                        fillColor: p.accent,
-                        textColor: [2, 6, 23]
-                    },
-                    alternateRowStyles: {
-                        fillColor: isMobileStyle ? p.tableAlt : p.tableAlt
-                    },
-                    margin: { left: marginX, right: marginX }
-                });
-            }
-
-            // Footer
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(8.5);
-            doc.setTextColor(...p.textMuted);
-            doc.text(
-                'Generated with Home Poker Tournament Planner',
-                pageWidth / 2,
-                pageHeight - 6,
-                { align: 'center' }
-            );
-
-            // Single tab, both pages
-            try {
-                doc.output('dataurlnewwindow');
-            } catch (e) {
-                alert('Error generating PDF: ' + (e && e.message ? e.message : e));
-            }
-        }
+     } = structure;
+     
+     const pageWidth = doc.internal.pageSize.getWidth();
+   
+     const pageHeight = doc.internal.pageSize.getHeight();
+   
+     const marginX = 14;
+   
+     const contentWidth = pageWidth - marginX * 2;
+   
+     const runtimeStr = runtimeHours.toFixed(1).replace(/\.0$/, '');
+   
+     // Color palettes
+   
+     const dark = {
+     
+       bg: [3, 7, 30],
+     
+       cardBg: [15, 23, 42],
+     
+       textMain: [241, 245, 249],
+     
+       textMuted: [156, 163, 175],
+     
+       accent: [34, 197, 94],
+     
+       border: [51, 65, 85],
+     
+       tableBase: [15, 23, 42],
+     
+       tableAlt: [30, 41, 59]
+     
+     };
+   
+     const light = {
+     
+       bg: [255, 255, 255],
+     
+       cardBg: [248, 250, 252],
+     
+       textMain: [15, 23, 42],
+     
+       textMuted: [100, 116, 139],
+     
+       accent: [34, 197, 94],
+     
+       border: [226, 232, 240],
+     
+       tableBase: [255, 255, 255],
+     
+       tableAlt: [241, 245, 249]
+     
+     };
+   
+     const p = isMobileStyle ? dark : light;
+   
+     function paintBackground() {
+     
+       doc.setFillColor(...p.bg);
+     
+       doc.rect(0, 0, pageWidth, pageHeight, 'F');
+     
+     }
+   
+     paintBackground();
+   
+     doc.setFont('helvetica', 'normal');
+   
+     // ---------------- PAGE 1 ----------------
+   
+     let y = 22;
+   
+     // Title
+   
+     doc.setTextColor(...p.accent);
+   
+     doc.setFont('helvetica', 'bold');
+   
+     doc.setFontSize(24);
+   
+     doc.text(tournamentName || 'Home Poker Tournament', pageWidth / 2, y, {
+     
+       align: 'center'
+     
+     });
+   
+     y += 8;
+   
+     // Subtitle
+   
+     doc.setFont('helvetica', 'normal');
+   
+     doc.setFontSize(11);
+   
+     doc.setTextColor(...p.textMuted);
+   
+     doc.text(
+     
+       `Poker Tournament Guide • ${players} players • ~${runtimeStr} hours`,
+     
+       pageWidth / 2,
+     
+       y,
+     
+       { align: 'center' }
+     
+     );
+   
+     y += 6;
+   
+     // Small green pill under title
+   
+     const pillText = 'Blinds • Stack • Breaks';
+   
+     const pillWidth = doc.getTextWidth(pillText) + 10;
+   
+     const pillX = (pageWidth - pillWidth) / 2;
+   
+     const pillY = y - 4;
+   
+     doc.setFillColor(...p.accent);
+   
+     doc.roundedRect(pillX, pillY, pillWidth, 7, 3, 3, 'F');
+   
+     doc.setFontSize(9);
+   
+     doc.setTextColor(2, 6, 23);
+   
+     doc.text(pillText, pageWidth / 2, y + 1, { align: 'center' });
+   
+     y += 9;
+   
+     // Accent line
+   
+     doc.setDrawColor(...p.accent);
+   
+     doc.setLineWidth(0.6);
+   
+     doc.line(marginX, y, pageWidth - marginX, y);
+   
+     y += 8;
+   
+     // ===== Tournament Summary header (centered) =====
+   
+     doc.setFont('helvetica', 'bold');
+   
+     doc.setFontSize(15);
+   
+     doc.setTextColor(...p.accent);
+   
+     doc.text('Tournament Summary', pageWidth / 2, y, { align: 'center' });
+   
+     y += 5;
+   
+     // Summary card
+   
+     const cardTop = y;
+   
+     const cardPaddingY = 6;
+   
+     const colGap = 8;
+   
+     const leftColX = marginX + 5;
+   
+     const rightColX = pageWidth / 2 + 5;
+   
+     // Build text for left/right columns
+   
+     const leftLines = [
+     
+       `Name: ${tournamentName || 'Home Poker Tournament'}`,
+     
+       `Players: ${players}`,
+     
+       `Runtime: ${runtimeStr} hours (includes breaks)`,
+     
+       `Level length: ${levelMinutes} minutes`,
+     
+       `Starting stack value: ${startingStackValue.toLocaleString()}`
+     
+     ];
+   
+     if (useBreaks && breaks.length) {
+     
+       leftLines.push(`Total break time: ${totalBreakMinutes} minutes`);
+     
+     } else {
+     
+       leftLines.push('Breaks: none scheduled');
+     
+     }
+   
+     if (allowRebuys && rebuyCutoffHours) {
+     
+       leftLines.push(
+       
+         `Rebuys: allowed until ${rebuyCutoffHours
+         
+           .toFixed(1)
+         
+           .replace(/\.0$/, '')} hours`
+         
+       );
+     
+     } else {
+     
+       leftLines.push('Rebuys: not allowed');
+     
+     }
+   
+     const rightLines = [];
+   
+     if (
+     
+       window.currentStackSuggestion &&
+     
+       currentStackSuggestion.colors.some(c => c.perPlayerCount > 0)
+     
+     ) {
+     
+       rightLines.push('Starting stack breakdown:');
+     
+       currentStackSuggestion.colors
+     
+         .filter(c => c.perPlayerCount > 0)
+     
+         .forEach(c => {
+         
+           rightLines.push(
+           
+             `${c.perPlayerCount} × ${c.name} (${c.value})`
+           
+           );
+         
+         });
+       
+     }
+   
+     const lineH = 5;
+   
+     const leftHeight = leftLines.length * lineH;
+   
+     const rightHeight = rightLines.length * lineH;
+   
+     const cardContentHeight = Math.max(leftHeight, rightHeight);
+   
+     const cardHeight = cardPaddingY * 2 + cardContentHeight;
+   
+     // Card background
+   
+     doc.setDrawColor(...p.border);
+   
+     if (isMobileStyle) {
+     
+       doc.setFillColor(...p.cardBg);
+     
+       doc.roundedRect(
+       
+         marginX - 1,
+       
+         cardTop - 4,
+       
+         contentWidth + 2,
+       
+         cardHeight + 8,
+       
+         4,
+       
+         4,
+       
+         'FD'
+       
+       );
+     
+     } else {
+     
+       doc.setFillColor(...p.cardBg);
+     
+       doc.roundedRect(
+       
+         marginX - 1,
+       
+         cardTop - 4,
+       
+         contentWidth + 2,
+       
+         cardHeight + 8,
+       
+         4,
+       
+         4,
+       
+         'FD'
+       
+       );
+     
+     }
+   
+     // Left column text
+   
+     doc.setFont('helvetica', 'normal');
+   
+     doc.setFontSize(11);
+   
+     doc.setTextColor(...p.textMain);
+   
+     let textY = cardTop + cardPaddingY;
+   
+     leftLines.forEach(line => {
+     
+       doc.text(line, leftColX, textY);
+     
+       textY += lineH;
+     
+     });
+   
+     // Right column text
+   
+     textY = cardTop + cardPaddingY;
+   
+     rightLines.forEach((line, idx) => {
+     
+       if (idx === 0) {
+       
+         doc.setFont('helvetica', 'bold');
+       
+       } else {
+       
+         doc.setFont('helvetica', 'normal');
+       
+       }
+     
+       doc.text(line, rightColX, textY);
+     
+       textY += lineH;
+     
+     });
+   
+     y = cardTop + cardHeight + 12;
+// ===== Hand Rankings header (centered, green) =====
+   
+     doc.setFont('helvetica', 'bold');
+   
+     doc.setFontSize(15);
+   
+     doc.setTextColor(...p.accent);
+   
+     doc.text(
+     
+       'Hand Rankings (Strongest to Weakest)',
+     
+       pageWidth / 2,
+     
+       y,
+     
+       { align: 'center' }
+     
+     );
+   
+     y += 6;
+   
+     // Hand ranking blocks
+   
+     doc.setTextColor(...p.textMain);
+   
+     const hands = [
+     
+       {
+       
+         title: 'ROYAL FLUSH',
+       
+         desc: 'A, K, Q, J, 10 — all of the same suit.'
+       
+       },
+     
+       {
+       
+         title: 'STRAIGHT FLUSH',
+       
+         desc: '5 cards of the same suit in sequence.'
+       
+       },
+     
+       {
+       
+         title: 'FOUR OF A KIND',
+       
+         desc: '4 cards of equal value.'
+       
+       },
+     
+       {
+       
+         title: 'FULL HOUSE',
+       
+         desc: 'Three of a kind with a pair.'
+       
+       },
+     
+       {
+       
+         title: 'FLUSH',
+       
+         desc: 'Any 5 cards of the same suit.'
+       
+       },
+     
+       {
+       
+         title: 'STRAIGHT',
+       
+         desc: '5 cards in a sequence.'
+       
+       },
+     
+       {
+       
+         title: 'THREE OF A KIND',
+       
+         desc: '3 cards of the same value.'
+       
+       },
+     
+       {
+       
+         title: 'TWO PAIRS',
+       
+         desc: '2 different pairs.'
+       
+       },
+     
+       {
+       
+         title: 'ONE PAIR',
+       
+         desc: '2 cards of the same value.'
+       
+       },
+     
+       {
+       
+         title: 'HIGH CARD',
+       
+         desc: '5 cards that don’t interact with each other.'
+       
+       }
+     
+     ];
+   
+     doc.setFontSize(11);
+   
+     const blockHeight = (pageHeight - y - 18) / hands.length; // evenly fill page
+   
+     hands.forEach((hand, idx) => {
+     
+       const blockTop = y + idx * blockHeight;
+     
+       const blockInnerTop = blockTop + 2;
+     
+       const blockBottom = blockTop + blockHeight;
+     
+       // Title
+     
+       doc.setFont('helvetica', 'bold');
+     
+       doc.text(hand.title, marginX, blockInnerTop + 4);
+     
+       // Description
+     
+       doc.setFont('helvetica', 'normal');
+     
+       doc.setTextColor(...p.textMuted);
+     
+       const wrapped = doc.splitTextToSize(hand.desc, contentWidth * 0.6);
+     
+       doc.text(wrapped, marginX, blockInnerTop + 10);
+     
+       // Divider line across block bottom (except last)
+     
+       if (idx < hands.length - 1) {
+       
+         doc.setDrawColor(...p.border);
+       
+         doc.setLineWidth(0.3);
+       
+         doc.line(
+         
+           marginX,
+         
+           blockBottom - 2,
+         
+           pageWidth - marginX,
+         
+           blockBottom - 2
+         
+         );
+       
+       }
+     
+       // Reset color for next block title
+     
+       doc.setTextColor(...p.textMain);
+     
+     });
+   
+     // ---------------- PAGE 2 ----------------
+   
+     doc.addPage();
+   
+     paintBackground();
+   
+     y = 20;
+   
+     doc.setFont('helvetica', 'bold');
+   
+     doc.setFontSize(16);
+   
+     doc.setTextColor(...p.textMain);
+   
+     doc.text('Structure Overview', marginX, y);
+   
+     y += 4;
+   
+     doc.setDrawColor(...p.accent);
+   
+     doc.setLineWidth(0.6);
+   
+     doc.line(marginX, y, marginX + 38, y);
+   
+     y += 8;
+   
+     // Suggested stack table
+   
+     if (
+     
+       window.currentStackSuggestion &&
+     
+       currentStackSuggestion.colors.some(c => c.perPlayerCount > 0)
+     
+     ) {
+     
+       doc.setFont('helvetica', 'bold');
+     
+       doc.setFontSize(13);
+     
+       doc.setTextColor(...p.accent);
+     
+       doc.text('Suggested Starting Stack (per player)', marginX, y);
+     
+       y += 5;
+     
+       doc.setFont('helvetica', 'normal');
+     
+       doc.setFontSize(10);
+     
+       doc.setTextColor(...p.textMuted);
+     
+       doc.text(
+       
+         `Approx. ${currentStackSuggestion.chipsPerPlayer} chips per player, value ~${currentStackSuggestion.totalValuePerPlayer.toLocaleString()}.`,
+       
+         marginX,
+       
+         y
+       
+       );
+     
+       y += 4;
+     
+       if (doc.autoTable) {
+       
+         const startY = y + 2;
+       
+         doc.autoTable({
+         
+           startY,
+         
+           head: [['Color', 'Value', 'Chips / Player', 'Total Used']],
+         
+           body: currentStackSuggestion.colors
+         
+             .filter(c => c.perPlayerCount > 0)
+         
+             .map(c => [
+             
+               c.name,
+             
+               String(c.value),
+             
+               String(c.perPlayerCount),
+             
+               String(c.perPlayerCount * players)
+             
+             ]),
+           
+           styles: {
+           
+             fontSize: 9.2,
+           
+             textColor: isMobileStyle ? [248, 250, 252] : p.textMain,
+           
+             fillColor: isMobileStyle ? p.tableBase : p.tableBase
+           
+           },
+         
+           headStyles: {
+           
+             fillColor: p.accent,
+           
+             textColor: [2, 6, 23]
+           
+           },
+         
+           alternateRowStyles: {
+           
+             fillColor: isMobileStyle ? p.tableAlt : p.tableAlt
+           
+           },
+         
+           margin: { left: marginX, right: marginX }
+         
+         });
+       
+         const tableBottom = doc.lastAutoTable.finalY;
+       
+         doc.setDrawColor(...p.border);
+       
+         doc.setFillColor(...p.cardBg);
+       
+         doc.roundedRect(
+         
+           marginX - 1,
+         
+           startY - 3,
+         
+           contentWidth + 2,
+         
+           tableBottom - startY + 6,
+         
+           3,
+         
+           3
+         
+         );
+       
+         y = tableBottom + 12;
+       
+       } else {
+       
+         y += 10;
+       
+       }
+     
+     }
+   
+     // Blind schedule
+   
+     doc.setFont('helvetica', 'bold');
+   
+     doc.setFontSize(13);
+   
+     doc.setTextColor(...p.accent);
+   
+     doc.text('Blind Schedule', marginX, y);
+   
+     y += 5;
+   
+     if (doc.autoTable) {
+     
+       const displayRows = buildDisplaySchedule(structure);
+     
+       doc.autoTable({
+       
+         startY: y + 2,
+       
+         head: [['Lvl', 'Start', 'End', 'SB', 'BB', 'Note']],
+       
+         body: displayRows.map(r => {
+         
+           if (r.type === 'level') {
+           
+             return [
+             
+               String(r.level),
+             
+               formatMinutes(r.startMin),
+             
+               formatMinutes(r.endMin),
+             
+               String(r.sb),
+             
+               String(r.bb),
+             
+               r.note || ''
+             
+             ];
+           
+           } else {
+           
+             return ['—', '', '', '', '', r.note || 'Break'];
+           
+           }
+         
+         }),
+       
+         styles: {
+         
+           fontSize: 9.2,
+         
+           textColor: isMobileStyle ? [248, 250, 252] : p.textMain,
+         
+           fillColor: isMobileStyle ? p.tableBase : p.tableBase
+         
+         },
+       
+         headStyles: {
+         
+           fillColor: p.accent,
+         
+           textColor: [2, 6, 23]
+         
+         },
+       
+         alternateRowStyles: {
+         
+           fillColor: isMobileStyle ? p.tableAlt : p.tableAlt
+         
+         },
+       
+         margin: { left: marginX, right: marginX }
+       
+       });
+     
+     }
+   
+     // Footer
+   
+     doc.setFont('helvetica', 'normal');
+   
+     doc.setFontSize(8.5);
+   
+     doc.setTextColor(...p.textMuted);
+   
+     doc.text(
+     
+       'Generated with Home Poker Tournament Planner',
+     
+       pageWidth / 2,
+     
+       pageHeight - 6,
+     
+       { align: 'center' }
+     
+     );
+   
+     // Open exactly ONE tab with the full 2-page PDF
+   
+     try {
+     
+       const blobUrl = doc.output('bloburl');
+     
+       window.open(blobUrl, '_blank');
+     
+     } catch (e) {
+     
+       alert('Error generating PDF: ' + (e && e.message ? e.message : e));
+     
+     }
+   
+   }
     </script>
 </body>
 
