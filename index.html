@@ -1445,16 +1445,16 @@
             const contentWidth = pageWidth - marginX * 2;
             const runtimeStr = runtimeHours.toFixed(1).replace(/\.0$/, '');
 
-            // Palettes
+            // Palettes (dark = more blue, clearer stripes)
             const mobilePalette = {
-                bg: [2, 6, 23],
-                cardBg: [24, 31, 44],      // darker gray/charcoal instead of blue
+                bg: [3, 7, 30],           // deep navy blue
+                cardBg: [15, 23, 42],     // navy panel
                 textMain: [241, 245, 249],
                 textMuted: [156, 163, 175],
                 accent: [34, 197, 94],
                 border: [51, 65, 85],
-                tableAlt: [30, 41, 59],
-                tableHeader: [15, 23, 42]
+                tableBase: [15, 23, 42],
+                tableAlt: [30, 41, 59]
             };
 
             const printPalette = {
@@ -1464,8 +1464,8 @@
                 textMuted: [100, 116, 139],
                 accent: [34, 197, 94],
                 border: [226, 232, 240],
-                tableAlt: [241, 245, 249],
-                tableHeader: [15, 23, 42]
+                tableBase: [255, 255, 255],
+                tableAlt: [241, 245, 249]
             };
 
             const p = isMobileStyle ? mobilePalette : printPalette;
@@ -1502,7 +1502,7 @@
             );
             y += 6;
 
-            // WOW FACTOR: small green pill
+            // Small green pill under title
             const pillText = 'Blinds • Stack • Breaks';
             const pillWidth = doc.getTextWidth(pillText) + 10;
             const pillX = (pageWidth - pillWidth) / 2;
@@ -1552,7 +1552,7 @@
                 summaryLines.push('Rebuys: not allowed');
             }
 
-            // NEW: starting stack breakdown if we have it
+            // Add starting stack breakdown (denoms + counts)
             if (
                 window.currentStackSuggestion &&
                 currentStackSuggestion.colors.some(c => c.perPlayerCount > 0)
@@ -1604,6 +1604,7 @@
                 doc.text(line, marginX + 4, textY);
                 textY += lineH;
             });
+
             y = y + cardHeight + 10;
 
             // --- Hand Rankings ---
@@ -1675,36 +1676,64 @@
                 y += wrapped.length * 5.0;
             });
 
-            // Fill remaining space on page 1 with a small "Quick Table Reminders" section
+            // --- Dogs playing poker panel (fills the remaining space) ---
             if (y < pageHeight - 40) {
                 y += 6;
+
+                const panelHeight = 32;
+                const panelTop = y;
+
+                // Panel background with subtle gradient effect (approx)
+                if (isMobileStyle) {
+                    doc.setFillColor(11, 15, 35);
+                } else {
+                    doc.setFillColor(248, 250, 252);
+                }
+                doc.setDrawColor(...p.border);
+                doc.roundedRect(
+                    marginX - 1,
+                    panelTop,
+                    contentWidth + 2,
+                    panelHeight,
+                    4,
+                    4,
+                    'FD'
+                );
+
+                // Title text
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(12.5);
                 doc.setTextColor(...p.textMain);
-                doc.text('Quick Table Reminders', marginX, y);
-                y += 5;
+                doc.text('Table Vibes', marginX + 4, panelTop + 7);
+
+                // "Dogs playing poker" caption
+                doc.setFont('helvetica', 'italic');
+                doc.setFontSize(10.5);
+                doc.setTextColor(...p.textMuted);
+                doc.text(
+                    'Imagine your crew here: dogs playing poker around the table.',
+                    marginX + 4,
+                    panelTop + 13
+                );
+
+                // Simple “art” box hint in the right side where a real image could go
+                const artW = 40;
+                const artH = 22;
+                const artX = pageWidth - marginX - artW;
+                const artY = panelTop + 6;
+
+                doc.setDrawColor(...p.accent);
+                doc.setLineWidth(0.4);
+                doc.roundedRect(artX, artY, artW, artH, 3, 3);
 
                 doc.setFont('helvetica', 'normal');
-                doc.setFontSize(10);
+                doc.setFontSize(8.5);
                 doc.setTextColor(...p.textMuted);
-
-                const tips = [
-                    'Act in turn and keep your cards visible on the table.',
-                    'Verbal declarations are binding; state bets and raises clearly.',
-                    'Big chips in front, smaller chips behind, for easy counting.',
-                    'Protect your cards with a chip or card protector when you look away.'
-                ];
-
-                tips.forEach(tip => {
-                    const bullet = '• ';
-                    const bulletWidth = doc.getTextWidth(bullet);
-                    doc.text(bullet, marginX, y);
-                    const wrapped = doc.splitTextToSize(
-                        tip,
-                        contentWidth - bulletWidth
-                    );
-                    doc.text(wrapped, marginX + bulletWidth, y);
-                    y += wrapped.length * 4.8;
+                doc.text('Dogs', artX + artW / 2, artY + artH / 2 - 3, {
+                    align: 'center'
+                });
+                doc.text('playing poker', artX + artW / 2, artY + artH / 2 + 3, {
+                    align: 'center'
                 });
             }
 
@@ -1760,14 +1789,15 @@
                             ]),
                         styles: {
                             fontSize: 9.2,
-                            textColor: isMobileStyle ? [15, 23, 42] : p.textMain
+                            textColor: isMobileStyle ? [248, 250, 252] : p.textMain,
+                            fillColor: isMobileStyle ? p.tableBase : p.tableBase
                         },
                         headStyles: {
                             fillColor: p.accent,
                             textColor: [2, 6, 23]
                         },
                         alternateRowStyles: {
-                            fillColor: isMobileStyle ? p.cardBg : p.tableAlt
+                            fillColor: isMobileStyle ? p.tableAlt : p.tableAlt
                         },
                         margin: { left: marginX, right: marginX }
                     });
@@ -1832,14 +1862,15 @@
                     }),
                     styles: {
                         fontSize: 9.2,
-                        textColor: isMobileStyle ? [15, 23, 42] : p.textMain
+                        textColor: isMobileStyle ? [248, 250, 252] : p.textMain,
+                        fillColor: isMobileStyle ? p.tableBase : p.tableBase
                     },
                     headStyles: {
                         fillColor: p.accent,
                         textColor: [2, 6, 23]
                     },
                     alternateRowStyles: {
-                        fillColor: isMobileStyle ? p.cardBg : p.tableAlt
+                        fillColor: isMobileStyle ? p.tableAlt : p.tableAlt
                     },
                     margin: { left: marginX, right: marginX }
                 });
@@ -1856,10 +1887,9 @@
                 { align: 'center' }
             );
 
-            // ---------- open as ONE tab, via blob URL ----------
+            // Single tab, both pages
             try {
-                const blobUrl = doc.output('bloburl');
-                window.open(blobUrl, '_blank');
+                doc.output('dataurlnewwindow');
             } catch (e) {
                 alert('Error generating PDF: ' + (e && e.message ? e.message : e));
             }
