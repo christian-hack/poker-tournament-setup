@@ -1423,7 +1423,6 @@
             }
 
             const isMobileStyle = pdfStyle === 'mobile';
-
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
@@ -1444,6 +1443,8 @@
             const pageHeight = doc.internal.pageSize.getHeight();
             const marginX = 14;
             const contentWidth = pageWidth - marginX * 2;
+
+            const runtimeStr = runtimeHours.toFixed(1).replace(/\.0$/, '');
 
             // Palettes
             const mobilePalette = {
@@ -1476,23 +1477,22 @@
             }
 
             paintBackground();
-
-            const runtimeStr = runtimeHours.toFixed(1).replace(/\.0$/, '');
-
             doc.setFont('helvetica', 'normal');
 
             // ---------------- PAGE 1 ----------------
-            let y = 18;
+            let y = 20;
 
             // Title
             doc.setTextColor(...p.accent);
-            doc.setFontSize(22);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(24);
             doc.text(tournamentName || 'Home Poker Tournament', pageWidth / 2, y, {
                 align: 'center'
             });
-            y += 7;
+            y += 8;
 
             // Subtitle
+            doc.setFont('helvetica', 'normal');
             doc.setFontSize(11);
             doc.setTextColor(...p.textMuted);
             doc.text(
@@ -1501,23 +1501,32 @@
                 y,
                 { align: 'center' }
             );
-            y += 5;
+            y += 6;
 
-            // Suit row wow-factor
-            doc.setFontSize(13);
-            doc.setTextColor(...p.textMain);
-            const suits = '♠  ♥  ♦  ♣';
-            doc.text(suits, pageWidth / 2, y, { align: 'center' });
-            y += 3;
+            // WOW FACTOR: small green pill with quick info
+            const pillText = 'Blinds • Stack • Breaks';
+            const pillWidth = doc.getTextWidth(pillText) + 10;
+            const pillX = (pageWidth - pillWidth) / 2;
+            const pillY = y - 4;
+
+            doc.setDrawColor(0, 0, 0);
+            doc.setFillColor(...p.accent);
+            doc.roundedRect(pillX, pillY, pillWidth, 7, 3, 3, 'F');
+
+            doc.setFontSize(9);
+            doc.setTextColor(2, 6, 23);
+            doc.text(pillText, pageWidth / 2, y + 1, { align: 'center' });
+            y += 8;
 
             // Accent line
             doc.setDrawColor(...p.accent);
-            doc.setLineWidth(0.7);
+            doc.setLineWidth(0.6);
             doc.line(marginX, y, pageWidth - marginX, y);
-            y += 6;
+            y += 8;
 
-            // --- Tournament Summary card ---
-            doc.setFontSize(13);
+            // --- Tournament Summary section ---
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(14);
             doc.setTextColor(...p.textMain);
             doc.text('Tournament Summary', marginX, y);
             y += 4;
@@ -1549,7 +1558,7 @@
             const cardPaddingY = 4;
             const cardHeight = cardPaddingY * 2 + summaryLines.length * lineH;
 
-            // Draw card background first
+            // Background card
             doc.setDrawColor(...p.border);
             if (isMobileStyle) {
                 doc.setFillColor(...p.cardBg);
@@ -1558,8 +1567,8 @@
                     y - 3,
                     contentWidth + 2,
                     cardHeight + 6,
-                    2,
-                    2,
+                    3,
+                    3,
                     'FD'
                 );
             } else {
@@ -1568,29 +1577,31 @@
                     y - 3,
                     contentWidth + 2,
                     cardHeight + 6,
-                    2,
-                    2
+                    3,
+                    3
                 );
             }
 
-            doc.setFontSize(10.5);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(11);
             doc.setTextColor(...p.textMain);
 
             let textY = y + cardPaddingY;
             summaryLines.forEach(line => {
-                doc.text(line, marginX + 3, textY);
+                doc.text(line, marginX + 4, textY);
                 textY += lineH;
             });
-
             y = y + cardHeight + 10;
 
-            // --- Hand rankings section ---
-            doc.setFontSize(13);
+            // --- Hand Rankings section ---
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(14);
             doc.setTextColor(...p.textMain);
             doc.text('Hand Rankings (Strongest to Weakest)', marginX, y);
-            y += 4;
+            y += 5;
 
-            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10.5);
             doc.setTextColor(...p.textMain);
 
             const handDescriptions = [
@@ -1637,45 +1648,54 @@
             ];
 
             handDescriptions.forEach(item => {
-                const line = `${item.title}: ${item.desc}`;
-                const wrapped = doc.splitTextToSize(line, contentWidth);
-                doc.text(wrapped, marginX, y);
-                y += wrapped.length * 4.6;
+                // bold label
+                doc.setFont('helvetica', 'bold');
+                doc.text(item.title + ':', marginX, y);
+                const labelWidth = doc.getTextWidth(item.title + ': ') + 1;
+
+                // normal desc
+                doc.setFont('helvetica', 'normal');
+                const wrapped = doc.splitTextToSize(item.desc, contentWidth - labelWidth);
+                doc.text(wrapped, marginX + labelWidth, y);
+                y += wrapped.length * 5.0;
             });
 
             // ---------------- PAGE 2 ----------------
             doc.addPage();
             paintBackground();
-            y = 18;
+            y = 20;
 
-            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(16);
             doc.setTextColor(...p.textMain);
             doc.text('Structure Overview', marginX, y);
             y += 4;
 
             doc.setDrawColor(...p.accent);
-            doc.setLineWidth(0.5);
-            doc.line(marginX, y, marginX + 40, y);
-            y += 6;
+            doc.setLineWidth(0.6);
+            doc.line(marginX, y, marginX + 38, y);
+            y += 8;
 
             // Suggested stack
             if (
                 window.currentStackSuggestion &&
                 currentStackSuggestion.colors.some(c => c.perPlayerCount > 0)
             ) {
-                doc.setFontSize(12.5);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(13);
                 doc.setTextColor(...p.accent);
                 doc.text('Suggested Starting Stack (per player)', marginX, y);
-                y += 4;
+                y += 5;
 
-                doc.setFontSize(9.8);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
                 doc.setTextColor(...p.textMuted);
                 doc.text(
                     `Approx. ${currentStackSuggestion.chipsPerPlayer} chips per player, value ~${currentStackSuggestion.totalValuePerPlayer.toLocaleString()}.`,
                     marginX,
                     y
                 );
-                y += 3;
+                y += 4;
 
                 if (doc.autoTable) {
                     const startY = y + 2;
@@ -1691,21 +1711,22 @@
                                 String(c.perPlayerCount * players)
                             ]),
                         styles: {
-                            fontSize: 9,
+                            fontSize: 9.2,
                             textColor: isMobileStyle ? [15, 23, 42] : p.textMain
                         },
                         headStyles: {
-                            fillColor: p.accent,   // green header
+                            fillColor: p.accent,
                             textColor: [2, 6, 23]
                         },
                         alternateRowStyles: {
-                            fillColor: isMobileStyle ? [15, 23, 42] : p.tableAlt
+                            fillColor: isMobileStyle ? p.cardBg : p.tableAlt
                         },
                         margin: { left: marginX, right: marginX }
                     });
 
                     const tableBottom = doc.lastAutoTable.finalY;
                     doc.setDrawColor(...p.border);
+
                     if (isMobileStyle) {
                         doc.setFillColor(...p.cardBg);
                         doc.roundedRect(
@@ -1713,8 +1734,8 @@
                             startY - 3,
                             contentWidth + 2,
                             tableBottom - startY + 6,
-                            2,
-                            2,
+                            3,
+                            3,
                             'FD'
                         );
                     } else {
@@ -1723,21 +1744,23 @@
                             startY - 3,
                             contentWidth + 2,
                             tableBottom - startY + 6,
-                            2,
-                            2
+                            3,
+                            3
                         );
                     }
-                    y = tableBottom + 10;
+
+                    y = tableBottom + 12;
                 } else {
                     y += 10;
                 }
             }
 
             // Blind schedule
-            doc.setFontSize(12.5);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(13);
             doc.setTextColor(...p.accent);
             doc.text('Blind Schedule', marginX, y);
-            y += 4;
+            y += 5;
 
             if (doc.autoTable) {
                 const displayRows = buildDisplaySchedule(structure);
@@ -1764,17 +1787,18 @@
                         textColor: isMobileStyle ? [15, 23, 42] : p.textMain
                     },
                     headStyles: {
-                        fillColor: p.accent,  // green header for wow + clarity
+                        fillColor: p.accent,
                         textColor: [2, 6, 23]
                     },
                     alternateRowStyles: {
-                        fillColor: isMobileStyle ? [15, 23, 42] : p.tableAlt
+                        fillColor: isMobileStyle ? p.cardBg : p.tableAlt
                     },
                     margin: { left: marginX, right: marginX }
                 });
             }
 
             // Footer
+            doc.setFont('helvetica', 'normal');
             doc.setFontSize(8.5);
             doc.setTextColor(...p.textMuted);
             doc.text(
