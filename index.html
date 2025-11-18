@@ -20,18 +20,26 @@
 
     <style>
         :root {
-            --bg-navy: #020617;
-            --bg-surface: #0b1220;
-            --bg-card: #020617;
-            --border-soft: rgba(148, 163, 184, 0.22);
-            --accent-green: #22c55e;
-            /* primary accent */
-            --accent-green-soft: #4ade80;
+            --bg-body: #020617;
+            --bg-shell: radial-gradient(circle at top, #0b1120 0, #020617 55%, #020617 100%);
+            --bg-card: linear-gradient(145deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.98));
+            --bg-preview: radial-gradient(circle at top left, #020617 0, #020617 55%, #020617 100%);
+
+            --border-soft: rgba(148, 163, 184, 0.3);
+            --border-strong: rgba(15, 23, 42, 0.9);
+
+            --accent: #22c55e;
+            --accent-soft: #4ade80;
+
             --text-main: #e5e7eb;
             --text-muted: #9ca3af;
             --text-soft: #6b7280;
+
+            --chip-pill-bg: rgba(15, 23, 42, 0.85);
+            --chip-pill-border: rgba(148, 163, 184, 0.35);
+
             --table-header-bg: #020617;
-            --table-row-alt: #020617;
+            --table-row-alt: rgba(15, 23, 42, 0.9);
         }
 
         * {
@@ -40,49 +48,50 @@
 
         body {
             margin: 0;
-            padding: 0;
-            background:
-                radial-gradient(circle at top, #1e293b 0, #020617 60%);
-            color: var(--text-main);
+            padding: 24px 10px;
+            min-height: 100vh;
+            background: var(--bg-body);
+            background-image: radial-gradient(circle at top left, #1f2937 0, #020617 60%);
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
                 "Segoe UI", sans-serif;
+            color: var(--text-main);
             display: flex;
             justify-content: center;
             align-items: flex-start;
-            min-height: 100vh;
-            padding: 20px 10px;
         }
 
         .app-shell {
-            background: radial-gradient(circle at top left, #020617 0, #020617 55%, #020617 100%);
-            border-radius: 18px;
-            max-width: 1120px;
+            max-width: 1160px;
             width: 100%;
+            background: var(--bg-shell);
+            border-radius: 22px;
+            padding: 22px 18px 24px;
             box-shadow:
-                0 22px 55px rgba(0, 0, 0, 0.75),
-                0 0 0 1px rgba(15, 23, 42, 0.9);
-            padding: 20px 18px 22px;
+                0 30px 80px rgba(0, 0, 0, 0.85),
+                0 0 0 1px rgba(15, 23, 42, 0.95);
         }
 
-        @media (min-width: 768px) {
+        @media (min-width: 900px) {
             .app-shell {
-                padding: 22px 26px 26px;
+                padding: 24px 28px 26px;
             }
         }
 
         header {
-            margin-bottom: 10px;
+            text-align: center;
+            margin-bottom: 16px;
         }
 
-        h1 {
+        header h1 {
             margin: 0;
-            font-size: 1.7rem;
-            letter-spacing: 0.05em;
+            font-size: 1.9rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
         }
 
         .subtitle {
-            margin: 4px 0 0;
-            font-size: 0.88rem;
+            margin-top: 6px;
+            font-size: 0.9rem;
             color: var(--text-muted);
         }
 
@@ -96,46 +105,45 @@
             .layout {
                 flex-direction: row;
                 align-items: flex-start;
-                gap: 16px;
+                gap: 18px;
             }
         }
 
         .left-column {
+            flex: 1.1;
             display: flex;
             flex-direction: column;
             gap: 10px;
-            flex: 1;
-            min-width: 0;
-        }
-
-        .card {
-            background: linear-gradient(135deg,
-                    rgba(15, 23, 42, 0.95),
-                    rgba(15, 23, 42, 0.96));
-            border-radius: 14px;
-            padding: 12px 14px 14px;
-            box-shadow: inset 0 0 0 1px var(--border-soft);
-        }
-
-        .form-card {
             min-width: 0;
         }
 
         .preview-card {
-            flex: 1.05;
+            flex: 1;
             min-width: 0;
+            background: var(--bg-preview);
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 14px 14px 15px;
+            box-shadow:
+                0 14px 40px rgba(15, 23, 42, 0.8),
+                inset 0 0 0 1px var(--border-soft);
+            backdrop-filter: blur(18px);
         }
 
         .card h2 {
-            margin: 0 0 6px;
-            font-size: 1rem;
-            letter-spacing: 0.04em;
+            margin: 0 0 8px;
+            font-size: 0.98rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
         }
 
         .form-grid {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 6px 12px;
+            gap: 7px 14px;
         }
 
         @media (min-width: 640px) {
@@ -148,25 +156,26 @@
             display: flex;
             flex-direction: column;
             gap: 3px;
-            font-size: 0.84rem;
+            font-size: 0.85rem;
         }
 
         .form-row span.helper {
-            font-size: 0.74rem;
+            font-size: 0.75rem;
             color: var(--text-soft);
         }
 
         label {
-            font-size: 0.82rem;
+            font-size: 0.8rem;
+            text-transform: none;
         }
 
         input[type="number"],
         input[type="text"],
         select {
-            border-radius: 9px;
+            border-radius: 10px;
             border: 1px solid #4b5563;
             background: #020617;
-            padding: 6px 9px;
+            padding: 6px 10px;
             color: var(--text-main);
             font-size: 0.9rem;
         }
@@ -174,77 +183,81 @@
         input[type="number"]:focus,
         input[type="text"]:focus,
         select:focus {
-            outline: 2px solid var(--accent-green);
+            outline: 2px solid var(--accent);
             outline-offset: 1px;
-            border-color: var(--accent-green);
+            border-color: var(--accent);
         }
 
         .inline-row {
             display: flex;
             flex-wrap: wrap;
-            align-items: center;
             gap: 6px;
-            font-size: 0.83rem;
+            align-items: center;
+            font-size: 0.82rem;
         }
 
         .checkbox-row {
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 0.85rem;
+            font-size: 0.83rem;
             margin-top: 2px;
         }
 
         input[type="checkbox"] {
             width: 15px;
             height: 15px;
-            accent-color: var(--accent-green);
+            accent-color: var(--accent);
         }
 
         .breaks-config,
         .rebuys-config {
-            margin-top: 4px;
-            padding: 6px 8px;
+            margin-top: 5px;
+            padding: 7px 9px;
             border-radius: 10px;
-            background: rgba(15, 23, 42, 0.98);
-            border: 1px dashed rgba(148, 163, 184, 0.7);
-            font-size: 0.8rem;
+            background: rgba(15, 23, 42, 0.97);
+            border: 1px dashed rgba(148, 163, 184, 0.8);
+            font-size: 0.78rem;
         }
 
         .btn-row {
             margin-top: 10px;
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 10px;
             align-items: center;
         }
 
         button {
             border-radius: 999px;
             border: none;
-            padding: 8px 16px;
+            padding: 8px 18px;
             font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
-            background: linear-gradient(135deg,
-                    var(--accent-green),
-                    var(--accent-green-soft));
+            background: radial-gradient(circle at top left, var(--accent-soft), var(--accent));
             color: #022c22;
-            box-shadow: 0 10px 26px rgba(34, 197, 94, 0.5);
+            box-shadow:
+                0 12px 30px rgba(34, 197, 94, 0.55),
+                0 0 0 1px rgba(22, 101, 52, 0.9);
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            transition: transform 0.08s ease, box-shadow 0.08s ease,
+            transition:
+                transform 0.08s ease,
+                box-shadow 0.08s ease,
                 filter 0.08s ease;
         }
 
         button:hover {
-            filter: brightness(1.04);
+            filter: brightness(1.05);
         }
 
         button:active {
             transform: translateY(1px);
-            box-shadow: 0 6px 18px rgba(34, 197, 94, 0.4);
+            box-shadow:
+                0 8px 20px rgba(34, 197, 94, 0.45),
+                0 0 0 1px rgba(22, 101, 52, 0.9);
         }
 
         .small-note {
@@ -263,30 +276,39 @@
         }
 
         .preview-header {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
             margin-bottom: 6px;
         }
 
-        .preview-section-title {
-            font-size: 0.9rem;
+        .preview-title {
+            font-size: 0.95rem;
             font-weight: 600;
-            margin-top: 6px;
-            margin-bottom: 2px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .preview-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-soft);
+        }
+
+        .preview-section-title {
+            font-size: 0.88rem;
+            font-weight: 600;
+            margin-top: 8px;
+            margin-bottom: 3px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
             font-size: 0.78rem;
-            margin-top: 2px;
         }
 
         th,
         td {
             padding: 4px 6px;
-            border-bottom: 1px solid rgba(31, 41, 55, 0.85);
+            border-bottom: 1px solid rgba(31, 41, 55, 0.9);
             text-align: left;
             white-space: nowrap;
         }
@@ -300,13 +322,41 @@
             z-index: 1;
         }
 
+        tr:nth-child(even) td {
+            background: rgba(15, 23, 42, 0.6);
+        }
+
         .scroll-box {
-            max-height: 210px;
+            max-height: 220px;
             overflow: auto;
-            border-radius: 10px;
-            border: 1px solid rgba(31, 41, 55, 0.9);
+            border-radius: 12px;
+            border: 1px solid var(--border-strong);
             background: radial-gradient(circle at top left, #020617 0, #020617 60%);
             padding: 3px;
+        }
+
+        .chip-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 9px;
+            border-radius: 999px;
+            background: var(--chip-pill-bg);
+            border: 1px solid var(--chip-pill-border);
+            font-size: 0.75rem;
+            color: var(--text-soft);
+        }
+
+        .chip-pill span {
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .pill-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 6px;
         }
     </style>
 </head>
@@ -448,6 +498,16 @@
                     <div class="small-note" id="chipSummaryNote" style="margin-top: 6px;">
                         Enter chip counts above to see a suggested starting stack per player.
                     </div>
+                    <div class="form-row" style="margin-top: 8px;">
+                        <label for="pdfStyle">PDF style</label>
+                        <select id="pdfStyle">
+                            <option value="mobile">Mobile-friendly (dark)</option>
+                            <option value="print">Printer-friendly (light)</option>
+                        </select>
+                        <span class="helper">
+                            Choose a dark, on-screen guide or a light version that’s easier to print.
+                        </span>
+                    </div>
                     <div class="btn-row">
                         <button id="generateBtn" type="button">
                             <span>Generate PDF Guide</span>
@@ -519,6 +579,7 @@
             const rebuysConfig = document.getElementById('rebuysConfig');
             const speedSelect = document.getElementById('structureSpeed');
             const nameInput = document.getElementById('tournamentName');
+            const generateBtn = document.getElementById('generateBtn');
 
             if (speedSelect) {
                 speedSelect.addEventListener('change', recalcAll);
@@ -526,6 +587,13 @@
             if (nameInput) {
                 nameInput.addEventListener('input', recalcAll);
             }
+            generateBtn.addEventListener('click', () => {
+                const structure = calculateStructure();
+                if (!structure) return;
+                const styleSelect = document.getElementById('pdfStyle');
+                const pdfStyle = styleSelect ? styleSelect.value : 'mobile';
+                generatePdf(structure, pdfStyle);
+            });
             useBreaks.addEventListener('change', () => {
                 breaksConfig.style.display = useBreaks.checked ? 'block' : 'none';
                 recalcAll();
@@ -570,7 +638,7 @@
                         rebuys_enabled: structure.allowRebuys
                     });
                 }
-                generatePdf(structure);
+                generatePdf(structure, pdfStyle);
             });
         }
 
@@ -1236,11 +1304,13 @@
             return `${hStr}:${mStr}`;
         }
 
-        function generatePdf(structure) {
+        function generatePdf(structure, pdfStyle) {
             if (!window.jspdf || !window.jspdf.jsPDF) {
                 alert('PDF engine (jsPDF) did not load. Check your connection and try again.');
                 return;
             }
+
+            const isMobileStyle = pdfStyle === 'mobile';
 
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ unit: 'mm', format: 'a4' });
@@ -1254,56 +1324,88 @@
                 allowRebuys,
                 rebuyCutoffHours,
                 startingStackValue,
+                levelMinutes,
                 tournamentName
             } = structure;
 
-            // colors matching the app
-            const accent = [34, 197, 94];      // neon green
-            const navy = [15, 23, 42];         // dark navy
-            const textMain = [15, 23, 42];
-            const textMuted = [100, 116, 139];
-
             const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
             const marginX = 12;
             const contentWidth = pageWidth - marginX * 2;
 
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(...textMain);
+            // Color palettes
+            const mobilePalette = {
+                bg: [2, 6, 23],
+                cardBg: [15, 23, 42],
+                textMain: [241, 245, 249],
+                textMuted: [148, 163, 184],
+                accent: [34, 197, 94],
+                border: [30, 64, 175],
+                tableAlt: [15, 23, 42],
+                tableHeader: [15, 23, 42]
+            };
 
-            let y = 14;
+            const printPalette = {
+                bg: [255, 255, 255],
+                cardBg: [248, 250, 252],
+                textMain: [15, 23, 42],
+                textMuted: [100, 116, 139],
+                accent: [34, 197, 94],
+                border: [226, 232, 240],
+                tableAlt: [241, 245, 249],
+                tableHeader: [15, 23, 42]
+            };
+
+            const p = isMobileStyle ? mobilePalette : printPalette;
+
+            // Background
+            if (isMobileStyle) {
+                doc.setFillColor(...p.bg);
+                doc.rect(0, 0, pageWidth, pageHeight, 'F');
+            } else {
+                doc.setFillColor(...p.bg);
+                doc.rect(0, 0, pageWidth, pageHeight, 'F');
+            }
+
+            const runtimeStr = runtimeHours.toFixed(1).replace(/\.0$/, '');
+
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(...p.textMain);
+
+            let y = 16;
 
             // HEADER
-            const runtimeStr = runtimeHours.toFixed(1).replace(/\.0$/, '');
-            doc.setFontSize(20);
-            doc.setTextColor(...accent);
+            doc.setFontSize(isMobileStyle ? 22 : 20);
+            doc.setTextColor(...p.accent);
             doc.text(tournamentName || 'Home Poker Tournament', pageWidth / 2, y, {
                 align: 'center'
             });
-            y += 6;
+            y += isMobileStyle ? 7 : 6;
 
             doc.setFontSize(11);
-            doc.setTextColor(...textMuted);
+            doc.setTextColor(...p.textMuted);
             doc.text(
-                `Home Poker Tournament Guide • ${players} players • ~${runtimeStr} hours`,
+                `Poker Tournament Guide • ${players} players • ~${runtimeStr} hours`,
                 pageWidth / 2,
                 y,
                 { align: 'center' }
             );
             y += 4;
 
-            // thin accent line
-            doc.setDrawColor(...accent);
-            doc.setLineWidth(0.5);
+            // accent line
+            doc.setDrawColor(...p.accent);
+            doc.setLineWidth(isMobileStyle ? 0.7 : 0.5);
             doc.line(marginX, y, pageWidth - marginX, y);
             y += 4;
 
             // HAND RANKINGS
-            doc.setTextColor(...textMain);
             doc.setFontSize(13);
+            doc.setTextColor(...p.textMain);
             doc.text('Hand Rankings (Strongest to Weakest)', marginX, y);
             y += 4;
 
             doc.setFontSize(9);
+            doc.setTextColor(...p.textMain);
 
             const handDescriptions = [
                 {
@@ -1352,19 +1454,20 @@
                 const label = `${item.title}: `;
                 const text = item.desc;
                 const labelWidth = doc.getTextWidth(label);
+                const baseX = marginX;
+                const maxTextWidth = contentWidth - labelWidth;
 
-                let lineY = y;
-                doc.text(label, marginX, lineY);
-                const wrapped = doc.splitTextToSize(text, contentWidth - labelWidth);
-                doc.text(wrapped, marginX + labelWidth, lineY);
+                doc.text(label, baseX, y);
+                const wrapped = doc.splitTextToSize(text, maxTextWidth);
+                doc.text(wrapped, baseX + labelWidth, y);
                 y += wrapped.length * 4;
             });
 
             y += 3;
 
-            // TOURNAMENT SUMMARY (dynamic box)
+            // TOURNAMENT SUMMARY - CARD
             doc.setFontSize(12);
-            doc.setTextColor(...textMain);
+            doc.setTextColor(...p.textMain);
             doc.text('Tournament Summary', marginX, y);
             y += 2;
 
@@ -1375,7 +1478,7 @@
             summaryLines.push(`Name: ${tournamentName || 'Home Poker Tournament'}`);
             summaryLines.push(`Players: ${players}`);
             summaryLines.push(`Runtime: ${runtimeStr} hours (includes breaks)`);
-            summaryLines.push(`Level length: ${structure.levelMinutes} minutes`);
+            summaryLines.push(`Level length: ${levelMinutes} minutes`);
             summaryLines.push(
                 `Starting stack value (approx.): ${startingStackValue.toLocaleString()}`
             );
@@ -1400,30 +1503,44 @@
             });
 
             const summaryBottom = y + 2;
-            doc.setDrawColor(226, 232, 240);
-            doc.setLineWidth(0.3);
-            doc.roundedRect(
-                marginX - 1,
-                summaryTop,
-                contentWidth + 2,
-                summaryBottom - summaryTop,
-                2,
-                2
-            );
-            y = summaryBottom + 4;
 
-            // SUGGESTED STARTING STACK
+            doc.setDrawColor(...p.border);
+            if (isMobileStyle) {
+                doc.setFillColor(...p.cardBg);
+                doc.roundedRect(
+                    marginX - 1,
+                    summaryTop - 2,
+                    contentWidth + 2,
+                    summaryBottom - summaryTop + 3,
+                    2,
+                    2,
+                    'FD'
+                );
+            } else {
+                doc.roundedRect(
+                    marginX - 1,
+                    summaryTop - 2,
+                    contentWidth + 2,
+                    summaryBottom - summaryTop + 3,
+                    2,
+                    2
+                );
+            }
+
+            y = summaryBottom + 6;
+
+            // SUGGESTED STACK
             if (
                 window.currentStackSuggestion &&
                 currentStackSuggestion.colors.some(c => c.perPlayerCount > 0)
             ) {
                 doc.setFontSize(12);
-                doc.setTextColor(...accent);
+                doc.setTextColor(...p.accent);
                 doc.text('Suggested Starting Stack (per player)', marginX, y);
                 y += 3;
 
                 doc.setFontSize(9);
-                doc.setTextColor(...textMuted);
+                doc.setTextColor(...p.textMuted);
                 doc.text(
                     `Approx. ${currentStackSuggestion.chipsPerPlayer} chips per player, value ~${currentStackSuggestion.totalValuePerPlayer.toLocaleString()}.`,
                     marginX,
@@ -1446,43 +1563,60 @@
                             ]),
                         styles: {
                             fontSize: 9,
-                            textColor: [15, 23, 42]
+                            textColor: isMobileStyle ? [15, 23, 42] : p.textMain
                         },
                         headStyles: {
-                            fillColor: navy,
+                            fillColor: p.tableHeader,
                             textColor: [248, 250, 252]
                         },
                         alternateRowStyles: {
-                            fillColor: [241, 245, 249]
+                            fillColor: p.tableAlt
                         },
                         margin: { left: marginX, right: marginX }
                     });
 
                     const tableBottom = doc.lastAutoTable.finalY;
-                    doc.setDrawColor(226, 232, 240);
-                    doc.roundedRect(
-                        marginX - 1,
-                        startY - 3,
-                        contentWidth + 2,
-                        tableBottom - startY + 6,
-                        2,
-                        2
-                    );
-                    y = tableBottom + 6;
+                    doc.setDrawColor(...p.border);
+                    if (isMobileStyle) {
+                        doc.setFillColor(...p.cardBg);
+                        doc.roundedRect(
+                            marginX - 1,
+                            startY - 3,
+                            contentWidth + 2,
+                            tableBottom - startY + 6,
+                            2,
+                            2,
+                            'FD'
+                        );
+                    } else {
+                        doc.roundedRect(
+                            marginX - 1,
+                            startY - 3,
+                            contentWidth + 2,
+                            tableBottom - startY + 6,
+                            2,
+                            2
+                        );
+                    }
+                    y = tableBottom + 8;
                 } else {
                     y += 8;
                 }
             }
 
-            // New page if needed before blinds
-            if (y > 210) {
+            // New page if needed
+            if (y > pageHeight - 40) {
                 doc.addPage();
-                y = 16;
+                if (isMobileStyle) {
+                    doc.setFillColor(...p.bg);
+                    doc.rect(0, 0, pageWidth, pageHeight, 'F');
+                }
+                y = 18;
             }
 
             // BLIND SCHEDULE
             doc.setFontSize(12);
-            doc.setTextColor(...accent);
+            doc.setTextColor(...p.accent);
             doc.text('Blind Schedule', marginX, y);
             y += 2;
 
@@ -1508,23 +1642,22 @@
                     }),
                     styles: {
                         fontSize: 9,
-                        textColor: [15, 23, 42]
+                        textColor: isMobileStyle ? [15, 23, 42] : p.textMain
                     },
                     headStyles: {
-                        fillColor: navy,
+                        fillColor: p.tableHeader,
                         textColor: [248, 250, 252]
                     },
                     alternateRowStyles: {
-                        fillColor: [241, 245, 249]
+                        fillColor: p.tableAlt
                     },
                     margin: { left: marginX, right: marginX }
                 });
             }
 
             // FOOTER
-            const pageHeight = doc.internal.pageSize.getHeight();
             doc.setFontSize(8);
-            doc.setTextColor(...textMuted);
+            doc.setTextColor(...p.textMuted);
             doc.text(
                 'Generated with Home Poker Tournament Planner',
                 pageWidth / 2,
